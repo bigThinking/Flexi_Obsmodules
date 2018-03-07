@@ -1,0 +1,1 @@
+Greedy routes data along the network using shortest path routing, and random available wavelength.

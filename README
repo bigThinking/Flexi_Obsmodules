@@ -1,0 +1,15 @@
+Flexi_OBS Modules for OMNeT++ and OMNEST
+------------------------------------
+
+Flexi_OBSmodules is a set of modules to simulate flex-spectrum and Dense Wavelength Division Multiplexed, Optical Burst Switched networks using the OMNeT++ framework. It is based on the OBSModules simulator at 
+https://github.com/mikelizal/OBSmodules. However, it has been heavily modified to cater for new needs. It is built to be extensible, in order to allow study of various part of Optical Burst Switching.
+
+Future work will consist of
+-Improving documentation
+-implementing signalling protocols such as JET
+-Improving Integration with INET framework
+
+This project requires at least Omnetpp 5.1 and INET 3.5 (20-09-2017)
+
+
+
