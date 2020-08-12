@@ -38,6 +38,8 @@ void Flexi_OBS_Routing::initialize(int stage)
         switchingDelay = par("switchingDelay");
         deferRouting = par("deferRoutingWhenInSuperNode");
         inSuperNode = par("InSuperNode");
+        shortestPathTable = getShortestPathTable();
+        routingTable = getTable();
 
         switch(gridType)
         {
@@ -70,8 +72,16 @@ void Flexi_OBS_Routing::initialize(int stage)
             EV_ERROR << "datarate percentages don't add up to 1" << endl;
     }
 
-    if(stage == 3)
+    if(stage == 3){
         ipAddr = getShortestPathTable()->getTop(0, false)->getSrcAddress();
+
+        if(inSuperNode)
+        {
+            cMessage* msg = new cMessage("setUpCoreNode");
+            msg->addPar("ipAddr").setLongValue(ipAddr);
+            send(msg, gateBaseId("out"));
+        }
+    }
 }
 
 void Flexi_OBS_Routing::finish()
@@ -122,6 +132,7 @@ void Flexi_OBS_Routing::handleMessage(cMessage *msg)
             burst->removeControlInfo();
             burst->setControlInfo(rInfo);
 
+            bcp->setBurstId(burst->getId());
             bcp->setDestAddr(destAddr);
             bcp->setSrcAddr(ipAddr);
             bcp->setBurstifierId(burst->getBurstifierId());
@@ -139,6 +150,8 @@ void Flexi_OBS_Routing::handleMessage(cMessage *msg)
             sentBurst++;
             destVector.record(destAddr);
             emit(sentBurstId, true);
+
+            delete info;
             return;
         }
     }
@@ -185,7 +198,7 @@ K_ShortestPathTable* Flexi_OBS_Routing::getShortestPathTable()
 
 // Code taken from INET Router module. Register the OBS interface into the interface table among other things
 InterfaceEntry* Flexi_OBS_Routing::registerInterface (){
-    InterfaceEntry *e = new InterfaceEntry(this);
+    InterfaceEntry *e = new InterfaceEntry();
 
     const char * s = getParentModule()->getParentModule()->getFullName();
     std::string name;
@@ -212,12 +225,9 @@ InterfaceEntry* Flexi_OBS_Routing::registerInterface (){
     e->setPointToPoint(true);
 
     // add
-    IInterfaceTable *ift = check_and_cast<IInterfaceTable *>(this->getParentModule()->getParentModule()->getParentModule()->getSubmodule("interfaceTable"));
+    IInterfaceTable *ift = check_and_cast<IInterfaceTable*>(this->getParentModule()->getParentModule()->getParentModule()->getSubmodule("interfaceTable"));
     if (ift)
         ift->addInterface(e);
-    //Maybe this could be useful in the future...
-    //  e->setNodeOutputGateId(e->getNodeOutputGateId()-lambda*idInterfaz);
-    //e->setNodeOutputGateId(e->getNodeOutputGateId()-lambda+1);
 
     return e;
 }
@@ -244,5 +254,73 @@ double Flexi_OBS_Routing::getDatarate()
             dataratesVector.record(datarates[i]);
             return datarates[i];
         }
+    }
+
+    return -1;
+}
+
+Flexi_OBS_BurstControlPacket* Flexi_OBS_Routing::generateBCP(OBS_Burst *burst)
+{
+    Flexi_OBS_BurstControlPacket *bcp = new Flexi_OBS_BurstControlPacket("BCP");
+    bcp->setIsControl(true);
+    OBS_BurstifierInfo *info = check_and_cast< OBS_BurstifierInfo *>(burst->getControlInfo());
+    int destAddr = info->getLabel();
+    bcp->setBurstId(burst->getId());
+    bcp->setDestAddr(destAddr);
+    bcp->setSrcAddr(ipAddr);
+    bcp->setBurstifierId(burst->getBurstifierId());
+    bcp->setNumSeq(burst->getNumSeq());
+    bcp->setBurstSize(burst->getByteLength());
+    bcp->setDatarate(getDatarate());
+    bcp->setSchedulingPriority(3);
+    bcp->setSourceSendTIme(simTime());
+}
+
+void Flexi_OBS_Routing::collectData(OBS_Burst *burst, Flexi_OBS_BurstControlPacket* bcp)
+{
+    int pos = -1;
+    bool found =  false;
+    string dest = std::to_string(bcp->getDestAddr());
+    for(Counter obj : destCounter)
+    {
+        pos++;
+        if(strcmp(obj.description.c_str(), dest.c_str()) == 0)
+        {
+            found = true;
+            break;
+        }
+    }
+
+    if(pos > -1 && found)
+        destCounter[pos].count++;
+    else
+    {
+        Counter counter;
+        counter.description = dest;
+        counter.count = 1;
+        destCounter.push_back(counter);
+    }
+
+    string route = bcp->getRoute()->getId();
+    pos = -1;
+    found =  false;
+    for(Counter obj : routeCounter)
+    {
+        pos++;
+        if(strcmp(obj.description.c_str(), route.c_str()) == 0)
+        {
+            found = true;
+            break;
+        }
+    }
+
+    if(pos > -1 && found)
+        routeCounter[pos].count++;
+    else
+    {
+        Counter counter;
+        counter.description = route;
+        counter.count = 1;
+        routeCounter.push_back(counter);
     }
 }

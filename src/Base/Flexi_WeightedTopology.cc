@@ -393,6 +393,28 @@ bool Flexi_WeightedTopology::hasEqualPath(vector<Node*> path1, vector<Node*> pat
     return false;
 }
 
+string Flexi_WeightedTopology::printGateNodes()
+{
+    string text = "";
+
+    for (int k = 0; k < nodes.size(); k++) {
+        WNode *node = (WNode *)nodes[k];
+        string nodeName = node->getModule()->getName();
+        int numInLinks = node->getNumInLinks();
+        int numOutLinks = node->getNumOutLinks();
+        int end = numOutLinks >= numInLinks ? numOutLinks : numInLinks;
+        for (int j = 0; j < end; j++) {
+            if(j < numInLinks)
+            text = text + to_string(node->getLinkIn(j)->getLocalGateId()) + "," + nodeName + "\n";
+
+            if(j < numOutLinks)
+            text = text + to_string(node->getLinkOut(j)->getLocalGateId()) + "," + nodeName + "\n";
+        }
+    }
+
+   return text;
+}
+
 void Flexi_WeightedTopology::extractFromNetwork(bool (*predicate)(cModule *,void *), void *data)
 {
     clear();

@@ -26,6 +26,7 @@ simple Flexi_OBS_BurstDisassembler like IDisassembler
       
         @signal[lostBurst](type=long);
         @signal[successfulBurst]();
+        @signal[lostBCP](type=long);
     gates:
         input in[];
         output out;

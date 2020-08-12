@@ -35,7 +35,7 @@ void Flexi_OBS_CoreInput::handleMessage(cMessage *msg){
         controlReceived++;
         OBS_CoreNodeInfo* info = new OBS_CoreNodeInfo();
         info->setInputPort(msg->getArrivalGate()->getPreviousGate()->getId());
-        msg->removeControlInfo();
+        delete msg->removeControlInfo();
         msg->setControlInfo(info);
 
 
@@ -51,9 +51,9 @@ void Flexi_OBS_CoreInput::handleMessage(cMessage *msg){
 
 void Flexi_OBS_CoreInput::finish()
 {
-    recordScalar("burst recieved", burstReceived);
-    recordScalar("control recieved", controlReceived);
-    recordScalar("bcp recieved", bcpReceived);
+    recordScalar("burst received", burstReceived);
+    recordScalar("control received", controlReceived);
+    recordScalar("bcp received", bcpReceived);
 }
 
 Flexi_OBS_CoreInput::~Flexi_OBS_CoreInput() {

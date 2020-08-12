@@ -40,6 +40,10 @@ packet EndToEndAck extends TransmittedMessage_Base {
     int distTravelled;
     int nodeCounter = 0;
     
+    double blrApprox = 1; 
+    int bcpLostOnRoute = 0;
+    int totalBCPSentOnRoute = 0;
+    
     byteLength = 60;
     isControl = true;
 }

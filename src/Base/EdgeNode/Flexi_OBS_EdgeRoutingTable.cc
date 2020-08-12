@@ -21,9 +21,16 @@ void Flexi_OBS_EdgeRoutingTable::initialize()
 {
     take(&(this->tableEntries));
     inSuperNode = par("inSuperNode");
+    recordTableEntries = par("recordTableEntries");
+    shortestPathTable = getShortestPathTable();
+
+    if(recordTableEntries){
+        file = new std::ofstream();
+        file->open(getFullPath());
+    }
 }
 
-void Flexi_OBS_EdgeRoutingTable::addEntry(NodeRoutingTableEntry *entry)
+bool Flexi_OBS_EdgeRoutingTable::addEntry(NodeRoutingTableEntry *entry)
 {
 
 }
@@ -51,6 +58,14 @@ cQueue* Flexi_OBS_EdgeRoutingTable::getDestEntries(int value, bool byDest)
     return NULL;
 }
 
+int Flexi_OBS_EdgeRoutingTable::entryComparator(cObject *obj1, cObject *obj2)
+{
+    NodeRoutingTableEntry *o1 = check_and_cast<NodeRoutingTableEntry *>(obj1);
+    NodeRoutingTableEntry *o2 = check_and_cast<NodeRoutingTableEntry *>(obj2);
+
+    return (o1->getPheromoneConc() > o2->getPheromoneConc()) ? 1 : (o1->getPheromoneConc() == o2->getPheromoneConc() ? 0 : -1);
+}
+
 void Flexi_OBS_EdgeRoutingTable::receiveSignal(cComponent *source, simsignal_t signalID, cObject *obj, cObject *details)
 {
 
@@ -66,3 +81,15 @@ NodeRoutingTableEntry* Flexi_OBS_EdgeRoutingTable::getEntry(int entryId)
     return entryIdIndex[entryId];
 }
 
+void Flexi_OBS_EdgeRoutingTable::finish()
+{
+    if(recordTableEntries){
+        if(file->is_open())
+            file->close();
+    }
+}
+
+K_ShortestPathTable* Flexi_OBS_EdgeRoutingTable::getShortestPathTable()
+{
+    return check_and_cast<K_ShortestPathTable *>(this->getParentModule()->getParentModule()->getSubmodule("k_ShortestPathTable"));
+}

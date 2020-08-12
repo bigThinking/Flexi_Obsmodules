@@ -21,6 +21,9 @@ class noncobject pathPtr; // announcement
 
 message AckTimer {
         simtime_t creationTime;
+        double spectrumCenter;
+        double spectrumLowerBound;
+        double spectrumUpperBound;
         int burstifierId;//Burstifier id
         int numSeq; //Sequence number into packet burstifier
         int senderId;

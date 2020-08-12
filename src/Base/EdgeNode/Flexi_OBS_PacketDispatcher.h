@@ -19,7 +19,9 @@
 #include <omnetpp.h>
 #include <stdlib.h>
 #include "QueueAssignment.h"
-#include "inet/networklayer/contract/INetworkProtocolControlInfo.h"
+#include "inet/common/packet/Packet.h"
+#include "inet/networklayer/common/L3Address.h"
+#include "inet/networklayer/common/L3AddressTag_m.h"
 
 using namespace std;
 using namespace inet;

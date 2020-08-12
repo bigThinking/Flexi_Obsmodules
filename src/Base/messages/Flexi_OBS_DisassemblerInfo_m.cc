@@ -1,5 +1,5 @@
 //
-// Generated file, do not edit! Created by nedtool 5.1 from C:/Users/s210036575/Documents/Omnetpp/obsmodules/src/Base/messages/Flexi_OBS_DisassemblerInfo.msg.
+// Generated file, do not edit! Created by nedtool 5.4 from src/Base/messages/Flexi_OBS_DisassemblerInfo.msg.
 //
 
 // Disable warnings about unused variables, empty switch stmts, etc:

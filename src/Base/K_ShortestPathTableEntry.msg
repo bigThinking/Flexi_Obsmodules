@@ -14,6 +14,7 @@
 //
 class K_ShortestPathTableEntry
 {
+    string id;
     int srcAddress;
     int destAddress;
     double cost;

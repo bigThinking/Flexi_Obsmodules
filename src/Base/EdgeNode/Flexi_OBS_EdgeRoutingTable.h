@@ -19,6 +19,10 @@
 #include <omnetpp.h>
 #include "NodeRoutingTableEntry_m.h"
 #include "EndToEndAck_m.h"
+#include <fstream>
+#include <iostream>
+#include "K_ShortestPathTableEntry_m.h"
+#include "K_ShortestPathTable.h"
 
 using namespace omnetpp;
 using namespace std;
@@ -31,17 +35,23 @@ class Flexi_OBS_EdgeRoutingTable : public cSimpleModule, public cListener
 {
   public:
     virtual cQueue* getDestEntries(int value, bool byDest=1);
-    virtual void addEntry(NodeRoutingTableEntry *entry);
+    virtual bool addEntry(NodeRoutingTableEntry *entry);
     void receiveSignal(cComponent *source, simsignal_t signalID, cObject *obj, cObject *details);
     virtual NodeRoutingTableEntry* getEntry(int entryId);
+    virtual void doRecordTableEntries(char* info){};
   protected:
     int entryCounter = 0;
-    bool inSuperNode;
+    bool inSuperNode, recordTableEntries;
+    std::ofstream* file;
     cArray tableEntries;
+    K_ShortestPathTable* shortestPathTable;
     map<int, NodeRoutingTableEntry*> entryIdIndex;
     virtual void initialize();
     virtual cArray* getEntries();
+    static int entryComparator(cObject *obj1, cObject *obj2);
     virtual void handleMessage(cMessage *msg);
+    virtual void finish();
+    K_ShortestPathTable* getShortestPathTable();
 };
 
 #endif

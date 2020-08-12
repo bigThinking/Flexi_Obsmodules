@@ -26,14 +26,42 @@ Flexi_OBS_OpticalCrossConnect::~Flexi_OBS_OpticalCrossConnect() {
     // TODO Auto-generated destructor stub
 }
 
-void Flexi_OBS_OpticalCrossConnect::initialize()
+void Flexi_OBS_OpticalCrossConnect::initialize(int stage)
 {
-    burstSent = 0;
-    bcpSent = 0;
-    controlSent = 0;
-    processingDelay = par("BCPProcessingDelay");
-    switchingDelay = par("switchingDelay");
-    lostBurstId = registerSignal("lostBurst");
+    if(stage == 0){
+        burstSent = 0;
+        bcpSent = 0;
+        controlSent = 0;
+        processingDelay = par("BCPProcessingDelay");
+        switchingDelay = par("switchingDelay");
+        lostBurstId = registerSignal("lostBurst");
+        reservationsCounter = 0;
+        WATCH(reservationsCounter);
+    }else if(stage == 1){
+        int outBaseId = gateBaseId("out");
+        int size = gateSize("out");
+
+        for(int i =0; i < size; i++)
+        {
+            cGate* outGate = gate(outBaseId+i);
+            cModule* mod  = outGate->getOwnerModule();
+
+            do{
+                outGate = outGate->getNextGate();
+                mod  = outGate->getOwnerModule();
+
+                if(strstr(mod->getName(), "edgeNode"))
+                {
+                    toEdgeNodeGateId = outBaseId+i;
+                    break;
+                }
+
+            }while(!(strstr(mod->getName(), "leftMux") || strstr(mod->getName(), "rightMux")));
+
+            if(!(strstr(mod->getName(), "edgeNode")))
+            links[outBaseId+i] = check_and_cast<Flexi_OBS_BurstMux*>(mod);
+        }
+    }
 }
 
 void Flexi_OBS_OpticalCrossConnect::handleMessage(cMessage *msg)
@@ -64,13 +92,14 @@ void Flexi_OBS_OpticalCrossConnect::handleMessage(cMessage *msg)
 
         for(int i = 0; i < reservations.size(); i++)
         {
-            if(reservations[i].burstifierId == burst->getBurstifierId() && reservations[i].numseq == burst->getNumSeq() && reservations[i].ready)
+            if(reservations[i].msgId == msg->getId() && reservations[i].burstifierId == burst->getBurstifierId() && reservations[i].numseq == burst->getNumSeq() && reservations[i].ready)
             {
                 if(reservations[i].sendDelayed)
                     sendDelayed(msg, reservations[i].delay, reservations[i].link);
                 else send(msg, reservations[i].link);
 
                 reservations.erase(reservations.begin()+i);
+                reservationsCounter = reservations.size();
                 burstSent++;
                 return;
             }else if (reservations[i].destLabel == info->getLabel() && reservations[i].ready){
@@ -87,7 +116,7 @@ void Flexi_OBS_OpticalCrossConnect::handleMessage(cMessage *msg)
     }else if(bcp != NULL){
         for(int i = 0; i < reservations.size(); i++)
         {
-            if((reservations[i].burstifierId == bcp->getBurstifierId() && reservations[i].numseq == bcp->getNumSeq()))
+            if((reservations[i].msgId == bcp->getBurstId() && reservations[i].burstifierId == bcp->getBurstifierId() && reservations[i].numseq == bcp->getNumSeq()))
             {
                 send(msg, reservations[i].link);
                 controlSent++;
@@ -98,10 +127,11 @@ void Flexi_OBS_OpticalCrossConnect::handleMessage(cMessage *msg)
     }else if(e != NULL){
         for(int i = 0; i < reservations.size(); i++)
         {
-            if((reservations[i].burstifierId == e->getBurstifierId() && reservations[i].numseq == e->getNumSeq()))
+            if((reservations[i].msgId == e->getId() && reservations[i].burstifierId == e->getBurstifierId() && reservations[i].numseq == e->getNumSeq()))
             {
                 send(msg, reservations[i].link);
                 reservations.erase(reservations.begin()+i);
+                reservationsCounter = reservations.size();
                 controlSent++;
                 return;
             }
@@ -111,7 +141,7 @@ void Flexi_OBS_OpticalCrossConnect::handleMessage(cMessage *msg)
     delete(msg);
 }
 
-void Flexi_OBS_OpticalCrossConnect::setOutLink(int seq, int burstifierId, int link)
+void Flexi_OBS_OpticalCrossConnect::setOutLink(long msgId, int seq, int burstifierId, int link)
 {
     //    for(int i = 0; i < reservations.size(); i++)
     //    {
@@ -129,18 +159,21 @@ void Flexi_OBS_OpticalCrossConnect::setOutLink(int seq, int burstifierId, int li
     reserve.link = link;
     reserve.ready = false;
     reserve.sendDelayed = false;
+    reserve.msgId = msgId;
 
     reservations.push_back(reserve);
+    reservationsCounter = reservations.size();
 
     if(switchingDelay > 0){
         cMessage *msg = new cMessage("switchready");
         msg->addPar("burstifierId").setLongValue(burstifierId);
         msg->addPar("numseq").setLongValue(seq);
+        msg->addPar("msgId").setLongValue(msgId);
         scheduleAt(simTime() + processingDelay + switchingDelay, msg);
     }
 }
 
-void Flexi_OBS_OpticalCrossConnect::setOutLink(int seq, int burstifierId, int link, simtime_t delay)
+void Flexi_OBS_OpticalCrossConnect::setOutLink(long msgId, int seq, int burstifierId, int link, simtime_t delay)
 {
     Enter_Method_Silent();
     reservation reserve;
@@ -150,14 +183,28 @@ void Flexi_OBS_OpticalCrossConnect::setOutLink(int seq, int burstifierId, int li
     reserve.ready = false;
     reserve.sendDelayed = true;
     reserve.delay = delay;
+    reserve.msgId = msgId;
 
     reservations.push_back(reserve);
+    reservationsCounter = reservations.size();
 
     if(switchingDelay > 0){
         cMessage *msg = new cMessage("switchready");
         msg->addPar("burstifierId").setLongValue(burstifierId);
         msg->addPar("numseq").setLongValue(seq);
+        msg->addPar("msgId").setLongValue(msgId);
         scheduleAt(simTime() + processingDelay + switchingDelay, msg);
+    }
+}
+
+void Flexi_OBS_OpticalCrossConnect::releaseOutLink(long msgId, int seq, int burstifierId)
+{
+    for(int i = reservations.size()-1; i >=0 ; i--)
+    {
+        if(reservations[i].msgId == msgId && reservations[i].numseq == seq && reservations[i].burstifierId == burstifierId){
+            reservations.erase(reservations.begin() + i);
+            reservationsCounter = reservations.size();
+        }
     }
 }
 
@@ -165,8 +212,10 @@ void Flexi_OBS_OpticalCrossConnect::releaseOutLink(int seq, int burstifierId)
 {
     for(int i = reservations.size()-1; i >=0 ; i--)
     {
-        if(reservations[i].numseq == seq && reservations[i].burstifierId == burstifierId)
+        if(reservations[i].numseq == seq && reservations[i].burstifierId == burstifierId){
             reservations.erase(reservations.begin() + i);
+            reservationsCounter = reservations.size();
+        }
     }
 }
 
@@ -175,4 +224,14 @@ void Flexi_OBS_OpticalCrossConnect::finish()
     recordScalar("control message sent", controlSent);
     recordScalar("burst sent", burstSent);
     recordScalar("bcp sent", bcpSent);
+}
+
+Flexi_OBS_BurstMux* Flexi_OBS_OpticalCrossConnect::getMux(int gateId)
+{
+    return links[gateId];
+}
+
+int Flexi_OBS_OpticalCrossConnect::getEdgeNodeGateId()
+{
+    return toEdgeNodeGateId;
 }

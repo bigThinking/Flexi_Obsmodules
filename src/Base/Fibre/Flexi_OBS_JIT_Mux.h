@@ -29,9 +29,11 @@ using namespace omnetpp;
  */
 class Flexi_OBS_JIT_Mux : public Flexi_OBS_BurstMux
 {
+public:
+    double determinePercentageFreeWavelengths() override;
 protected:
     simsignal_t nackSentId;
-
+    cOutVector fragmentationUE, fragmentationSHF, fragmentationEF;
     vector<bool> wavelengthInUseArray;
     vector<AckTimer*> ackTimers;
     double bcpTraversalAckMultiplier;
@@ -50,7 +52,6 @@ protected:
     void startAckTimer(Flexi_OBS_BurstControlPacket *bcp, simtime_t transmissionDuration);
     void cancelAckTimer(int burstifierId, int numSeq, int senderId);
     void sendAck(Flexi_OBS_BurstControlPacket* bcp);
-    double determinePercentageFreeWavelengths() override;
     void handleAckTimer(cMessage* msg);
 
     virtual void initialiseWavelengthReservationTables() override;
@@ -60,6 +61,7 @@ protected:
     virtual bool doReservationReceiverSide(Flexi_OBS_BurstControlPacket* bcp) override;
     virtual void cancelOtherTimers(ReservationTimer* timer)override;
     void cancelReservation(ReservationTimer* timer) override;
+    void doCollectMeasures() override;
 
     virtual bool doJIT(Flexi_OBS_BurstControlPacket* bcp);
 };

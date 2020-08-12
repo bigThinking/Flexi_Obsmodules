@@ -44,11 +44,11 @@ void Flexi_OBS_PacketDispatcher::handleMessage(cMessage *msg)
 
     // Make sure the received message is an IPDatagram
     //   IPDatagram *recvIP = check_and_cast< IPDatagram* > (msg);
-    cPacket *recvIP = dynamic_cast<cPacket*> (msg);
+    Packet *recvIP = dynamic_cast<Packet*> (msg);
 
     if(recvIP == NULL)
     {
-        delete(msg);
+        delete msg;
         return;
     }
 
@@ -61,13 +61,17 @@ void Flexi_OBS_PacketDispatcher::handleMessage(cMessage *msg)
         lastPacket_t = simTime();
     }
 
-    INetworkProtocolControlInfo *controlInfo = check_and_cast<INetworkProtocolControlInfo*>(recvIP->getControlInfo());
     //register incoming packet
     recvPackSizeVec.record(recvIP->getByteLength());
     recvPackSize.collect(recvIP->getByteLength());
     //end of register
 
-    int destAddress = controlInfo->getDestinationAddress().toIPv4().getInt();
+    L3AddressReq* tag = recvIP->findTag<L3AddressReq>();
+    int destAddress = -1;
+
+    if(tag)
+       destAddress = tag->getDestAddress().toIpv4().getInt();
+
 
     int pos = searchMonitorArray(destAddress, true);
 

@@ -21,6 +21,7 @@
 #include "Flexi_OBS_BurstRouterInfo_m.h"
 #include "Flexi_OBS_BurstControlPacket_m.h"
 #include "EndToEndAck_m.h"
+#include "Flexi_OBS_BurstMux.h"
 
 using namespace std;
 using namespace omnetpp;
@@ -31,15 +32,21 @@ public:
     virtual ~Flexi_OBS_OpticalCrossConnect();
 
    // virtual void setOutLink(int destLabel, int link);
-    virtual void setOutLink(int seq, int burstifierId, int link);
-    virtual void setOutLink(int seq, int burstifierId, int link, simtime_t delay);
+    virtual void setOutLink(long msgId, int seq, int burstifierId, int link);
+    virtual void setOutLink(long msgId, int seq, int burstifierId, int link, simtime_t delay);
    // virtual void releaseOutLink(int destLabel);
-    virtual void releaseOutLink(int seq, int burstfierId);
+    virtual void releaseOutLink(long msgId, int seq, int burstifierId);
+    virtual void releaseOutLink(int seq, int burstifierId);
+    Flexi_OBS_BurstMux* getMux(int gateId);
+    int getEdgeNodeGateId();
   protected:
+    map<int, Flexi_OBS_BurstMux*> links;
     simsignal_t lostBurstId;
-    int burstSent, bcpSent, controlSent;
+    int toEdgeNodeGateId;
+    int burstSent, bcpSent, controlSent, reservationsCounter;
     simtime_t switchingDelay, processingDelay;
     struct reservation{
+            long msgId;
             int link;
             int numseq;
             int burstifierId;
@@ -49,7 +56,8 @@ public:
             simtime_t delay;
         };
     vector<reservation> reservations;
-     virtual void initialize();
+     virtual void initialize(int stage);
+     virtual int numInitStages() const  {return 2;}
      virtual void handleMessage(cMessage *msg);
      void finish();
 };

@@ -1,5 +1,5 @@
 //
-// Generated file, do not edit! Created by nedtool 5.1 from C:/Users/s210036575/Documents/Omnetpp/obsmodules/src/Base/NodeRoutingTableEntry.msg.
+// Generated file, do not edit! Created by nedtool 5.4 from src/Base/NodeRoutingTableEntry.msg.
 //
 
 // Disable warnings about unused variables, empty switch stmts, etc:
@@ -195,6 +195,9 @@ NodeRoutingTableEntry::NodeRoutingTableEntry() : ::omnetpp::cObject()
     this->failedCounter = 0;
     this->successCounter = 0;
     this->numberOfCoreNodes = 0;
+    this->burstLossRatio = 0;
+    this->intermediateValue01 = 0;
+    this->intermediateValue02 = 0;
 }
 
 NodeRoutingTableEntry::NodeRoutingTableEntry(const NodeRoutingTableEntry& other) : ::omnetpp::cObject(other)
@@ -231,6 +234,9 @@ void NodeRoutingTableEntry::copy(const NodeRoutingTableEntry& other)
     this->failedCounter = other.failedCounter;
     this->successCounter = other.successCounter;
     this->numberOfCoreNodes = other.numberOfCoreNodes;
+    this->burstLossRatio = other.burstLossRatio;
+    this->intermediateValue01 = other.intermediateValue01;
+    this->intermediateValue02 = other.intermediateValue02;
 }
 
 void NodeRoutingTableEntry::parsimPack(omnetpp::cCommBuffer *b) const
@@ -250,6 +256,9 @@ void NodeRoutingTableEntry::parsimPack(omnetpp::cCommBuffer *b) const
     doParsimPacking(b,this->failedCounter);
     doParsimPacking(b,this->successCounter);
     doParsimPacking(b,this->numberOfCoreNodes);
+    doParsimPacking(b,this->burstLossRatio);
+    doParsimPacking(b,this->intermediateValue01);
+    doParsimPacking(b,this->intermediateValue02);
 }
 
 void NodeRoutingTableEntry::parsimUnpack(omnetpp::cCommBuffer *b)
@@ -269,6 +278,9 @@ void NodeRoutingTableEntry::parsimUnpack(omnetpp::cCommBuffer *b)
     doParsimUnpacking(b,this->failedCounter);
     doParsimUnpacking(b,this->successCounter);
     doParsimUnpacking(b,this->numberOfCoreNodes);
+    doParsimUnpacking(b,this->burstLossRatio);
+    doParsimUnpacking(b,this->intermediateValue01);
+    doParsimUnpacking(b,this->intermediateValue02);
 }
 
 double NodeRoutingTableEntry::getPheromoneConc() const
@@ -381,32 +393,32 @@ void NodeRoutingTableEntry::setRoute(const pathPtr& route)
     this->route = route;
 }
 
-int NodeRoutingTableEntry::getUsedCounter() const
+double NodeRoutingTableEntry::getUsedCounter() const
 {
     return this->usedCounter;
 }
 
-void NodeRoutingTableEntry::setUsedCounter(int usedCounter)
+void NodeRoutingTableEntry::setUsedCounter(double usedCounter)
 {
     this->usedCounter = usedCounter;
 }
 
-int NodeRoutingTableEntry::getFailedCounter() const
+double NodeRoutingTableEntry::getFailedCounter() const
 {
     return this->failedCounter;
 }
 
-void NodeRoutingTableEntry::setFailedCounter(int failedCounter)
+void NodeRoutingTableEntry::setFailedCounter(double failedCounter)
 {
     this->failedCounter = failedCounter;
 }
 
-int NodeRoutingTableEntry::getSuccessCounter() const
+double NodeRoutingTableEntry::getSuccessCounter() const
 {
     return this->successCounter;
 }
 
-void NodeRoutingTableEntry::setSuccessCounter(int successCounter)
+void NodeRoutingTableEntry::setSuccessCounter(double successCounter)
 {
     this->successCounter = successCounter;
 }
@@ -419,6 +431,36 @@ int NodeRoutingTableEntry::getNumberOfCoreNodes() const
 void NodeRoutingTableEntry::setNumberOfCoreNodes(int numberOfCoreNodes)
 {
     this->numberOfCoreNodes = numberOfCoreNodes;
+}
+
+double NodeRoutingTableEntry::getBurstLossRatio() const
+{
+    return this->burstLossRatio;
+}
+
+void NodeRoutingTableEntry::setBurstLossRatio(double burstLossRatio)
+{
+    this->burstLossRatio = burstLossRatio;
+}
+
+double NodeRoutingTableEntry::getIntermediateValue01() const
+{
+    return this->intermediateValue01;
+}
+
+void NodeRoutingTableEntry::setIntermediateValue01(double intermediateValue01)
+{
+    this->intermediateValue01 = intermediateValue01;
+}
+
+double NodeRoutingTableEntry::getIntermediateValue02() const
+{
+    return this->intermediateValue02;
+}
+
+void NodeRoutingTableEntry::setIntermediateValue02(double intermediateValue02)
+{
+    this->intermediateValue02 = intermediateValue02;
 }
 
 class NodeRoutingTableEntryDescriptor : public omnetpp::cClassDescriptor
@@ -486,7 +528,7 @@ const char *NodeRoutingTableEntryDescriptor::getProperty(const char *propertynam
 int NodeRoutingTableEntryDescriptor::getFieldCount() const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
-    return basedesc ? 15+basedesc->getFieldCount() : 15;
+    return basedesc ? 18+basedesc->getFieldCount() : 18;
 }
 
 unsigned int NodeRoutingTableEntryDescriptor::getFieldTypeFlags(int field) const
@@ -513,8 +555,11 @@ unsigned int NodeRoutingTableEntryDescriptor::getFieldTypeFlags(int field) const
         FD_ISEDITABLE,
         FD_ISEDITABLE,
         FD_ISEDITABLE,
+        FD_ISEDITABLE,
+        FD_ISEDITABLE,
+        FD_ISEDITABLE,
     };
-    return (field>=0 && field<15) ? fieldTypeFlags[field] : 0;
+    return (field>=0 && field<18) ? fieldTypeFlags[field] : 0;
 }
 
 const char *NodeRoutingTableEntryDescriptor::getFieldName(int field) const
@@ -541,8 +586,11 @@ const char *NodeRoutingTableEntryDescriptor::getFieldName(int field) const
         "failedCounter",
         "successCounter",
         "numberOfCoreNodes",
+        "burstLossRatio",
+        "intermediateValue01",
+        "intermediateValue02",
     };
-    return (field>=0 && field<15) ? fieldNames[field] : nullptr;
+    return (field>=0 && field<18) ? fieldNames[field] : nullptr;
 }
 
 int NodeRoutingTableEntryDescriptor::findField(const char *fieldName) const
@@ -564,6 +612,9 @@ int NodeRoutingTableEntryDescriptor::findField(const char *fieldName) const
     if (fieldName[0]=='f' && strcmp(fieldName, "failedCounter")==0) return base+12;
     if (fieldName[0]=='s' && strcmp(fieldName, "successCounter")==0) return base+13;
     if (fieldName[0]=='n' && strcmp(fieldName, "numberOfCoreNodes")==0) return base+14;
+    if (fieldName[0]=='b' && strcmp(fieldName, "burstLossRatio")==0) return base+15;
+    if (fieldName[0]=='i' && strcmp(fieldName, "intermediateValue01")==0) return base+16;
+    if (fieldName[0]=='i' && strcmp(fieldName, "intermediateValue02")==0) return base+17;
     return basedesc ? basedesc->findField(fieldName) : -1;
 }
 
@@ -587,12 +638,15 @@ const char *NodeRoutingTableEntryDescriptor::getFieldTypeString(int field) const
         "int",
         "int",
         "pathPtr",
+        "double",
+        "double",
+        "double",
         "int",
-        "int",
-        "int",
-        "int",
+        "double",
+        "double",
+        "double",
     };
-    return (field>=0 && field<15) ? fieldTypeStrings[field] : nullptr;
+    return (field>=0 && field<18) ? fieldTypeStrings[field] : nullptr;
 }
 
 const char **NodeRoutingTableEntryDescriptor::getFieldPropertyNames(int field) const
@@ -670,10 +724,13 @@ std::string NodeRoutingTableEntryDescriptor::getFieldValueAsString(void *object,
         case 8: return long2string(pp->getInputPort());
         case 9: return long2string(pp->getOutputPort());
         case 10: {std::stringstream out; out << pp->getRoute(); return out.str();}
-        case 11: return long2string(pp->getUsedCounter());
-        case 12: return long2string(pp->getFailedCounter());
-        case 13: return long2string(pp->getSuccessCounter());
+        case 11: return double2string(pp->getUsedCounter());
+        case 12: return double2string(pp->getFailedCounter());
+        case 13: return double2string(pp->getSuccessCounter());
         case 14: return long2string(pp->getNumberOfCoreNodes());
+        case 15: return double2string(pp->getBurstLossRatio());
+        case 16: return double2string(pp->getIntermediateValue01());
+        case 17: return double2string(pp->getIntermediateValue02());
         default: return "";
     }
 }
@@ -698,10 +755,13 @@ bool NodeRoutingTableEntryDescriptor::setFieldValueAsString(void *object, int fi
         case 7: pp->setAssignedSpectrumUpperBound(string2double(value)); return true;
         case 8: pp->setInputPort(string2long(value)); return true;
         case 9: pp->setOutputPort(string2long(value)); return true;
-        case 11: pp->setUsedCounter(string2long(value)); return true;
-        case 12: pp->setFailedCounter(string2long(value)); return true;
-        case 13: pp->setSuccessCounter(string2long(value)); return true;
+        case 11: pp->setUsedCounter(string2double(value)); return true;
+        case 12: pp->setFailedCounter(string2double(value)); return true;
+        case 13: pp->setSuccessCounter(string2double(value)); return true;
         case 14: pp->setNumberOfCoreNodes(string2long(value)); return true;
+        case 15: pp->setBurstLossRatio(string2double(value)); return true;
+        case 16: pp->setIntermediateValue01(string2double(value)); return true;
+        case 17: pp->setIntermediateValue02(string2double(value)); return true;
         default: return false;
     }
 }

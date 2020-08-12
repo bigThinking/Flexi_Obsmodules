@@ -36,7 +36,9 @@ simple Flexi_OBS_BurstMux like IMux
         bool reservationTimerEnabled = default(false);
         bool useExplicitRelease = default(false);
         bool enableImpairments = default(true);
+        bool impairmentFreeControlChannels = default(true);
         bool enablePriorityQueuing = default(true);
+        bool collectMeasures = default(true);
         int maxControlQueueLength = default(0);
         @display("i=block/rxtx");
             

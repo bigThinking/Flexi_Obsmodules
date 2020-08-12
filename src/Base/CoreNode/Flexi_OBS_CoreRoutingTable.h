@@ -39,6 +39,7 @@ protected:
     map<int, NodeRoutingTableEntry*> entryIdIndex;
     virtual void initialize();
     virtual cArray* getEntries();
+    static int entryComparator(cObject *obj1, cObject *obj2);
     virtual void handleMessage(cMessage *msg);
 };
 

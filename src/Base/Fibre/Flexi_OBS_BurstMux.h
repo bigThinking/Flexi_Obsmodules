@@ -2,7 +2,6 @@
 #include <cmath>
 #include <stdlib.h>
 #include "inet/common/INETDefs.h"
-#include "inet/common/NotifierConsts.h"
 #include "OBS_Burst.h"
 #include "Flexi_OBS_BurstControlPacket_m.h"
 #include "TransmissionEntry_m.h"
@@ -19,6 +18,12 @@ class Flexi_OBS_BurstRouterInfo;
 
 //! Responsible of burst sending through the OBS Network
 class Flexi_OBS_BurstMux : public cSimpleModule{
+public:
+    // Statistic counters
+    double burstLoss, bcpLoss;
+    int controlMessageLost, bcpLost, controlMessageDroppedByQueue, controlMessageLostByImpairments, burstLostByFailedReservation;
+    int burstLost, burstDroppedAtSource, recvedBcpsFromNode, burstRecvFromNode, controlMessageFromNode, burstCounter, bcpCounter;
+    virtual double determinePercentageFreeWavelengths(){throw cRuntimeError("Flexi_OBS_BurstMux is a base type");}
 protected:
     static constexpr double propagationDelayPerKm = 0.000005;//5 microseconds
 
@@ -28,6 +33,9 @@ protected:
         int burstifierId;
         int msgSize;
         bool isSender;
+        double spectrumCenter;
+        double spectrumLowerBound;
+        double spectrumUpperBound;
         simtime_t msgOffset;
 
         reservation(int index_, int numseq_, int burstifierId_, int msgSize_, simtime_t msgOffset_, bool isSender_ )
@@ -48,19 +56,10 @@ protected:
     };
 
     //statistic signals
-    simsignal_t lostBurstId;
-    simsignal_t lostBCPId;
-
-    // Statistic counters
-    double burstLoss;
-    int controlMessageLost, bcpLost, controlMessageDroppedByQueue, controlMessageLostByImpairments, burstLostByFailedReservation;
-    int burstLost, burstDroppedAtSource, recvedBcpsFromNode, burstRecvFromNode, controlMessageFromNode, wavelengthAssignmentType, burstCounter;
+    simsignal_t lostBurstId, lostBCPId;
 
     //Statistics vectors
-    cOutVector lostBcpSources;
-    cOutVector lostBcpDestination;
-    cOutVector offsetTimes;
-    cOutVector transmissionCenters;
+    cOutVector lostBcpSources, lostBcpDestination, offsetTimes, transmissionCenters;
 
     simtime_t propagationDelay;//!< propagation delay across current fibre, calculated by multiplying propagationDelayPerKm by length of fibre
     simtime_t guardTime; //!< Offset which could be placed between consecutive burst transmissions.
@@ -69,10 +68,10 @@ protected:
     double k, attenuationConst, fibreLength;
     bool reservationTimerEnabled, hasOwnControlChannel;
     bool controlChannelReady = false;
-    bool enableImpairments, enablePriorityQueuing;
+    bool enableImpairments, enablePriorityQueuing, impairmentFreeControlChannels;
 
     //c = collision count
-    int maxControlQueueLength, gridType, numOfWavelengths, c;
+    int maxControlQueueLength, gridType, numOfWavelengths, c, wavelengthAssignmentType;
     double transmitterPower, receiverSensitivity;
     double spectrumLowerBound, spectrumUpperBound, totalBandwidth, assignedSpectrumWidth;
     bool useExplicitRelease, infiniteControlQueueLength;
@@ -84,6 +83,7 @@ protected:
     FibreTable* table;
 
     cMessage* processControlQueue;
+    cMessage* collectMeasures;
     cDatarateChannel* controlChannelOut;
     cDatarateChannel* controlChannelIn;
     cGate* controlChannelOutGate;
@@ -124,5 +124,5 @@ protected:
     virtual bool doReservationReceiverSide(Flexi_OBS_BurstControlPacket* bcp){throw cRuntimeError("Flexi_OBS_BurstMux is a base type");}
     virtual void cancelOtherTimers(ReservationTimer* timer){throw cRuntimeError("Flexi_OBS_BurstMux is a base type");}
     virtual bool assignWavelength(Flexi_OBS_BurstControlPacket* bcp){throw cRuntimeError("Flexi_OBS_BurstMux is a base type");}
-    virtual double determinePercentageFreeWavelengths(){throw cRuntimeError("Flexi_OBS_BurstMux is a base type");}
+    virtual void doCollectMeasures(){throw cRuntimeError("Flexi_OBS_BurstMux is a base type");};
 };

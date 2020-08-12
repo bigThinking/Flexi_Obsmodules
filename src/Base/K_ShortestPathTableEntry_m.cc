@@ -1,5 +1,5 @@
 //
-// Generated file, do not edit! Created by nedtool 5.1 from src/Base/K_ShortestPathTableEntry.msg.
+// Generated file, do not edit! Created by nedtool 5.4 from src/Base/K_ShortestPathTableEntry.msg.
 //
 
 // Disable warnings about unused variables, empty switch stmts, etc:
@@ -210,6 +210,7 @@ K_ShortestPathTableEntry& K_ShortestPathTableEntry::operator=(const K_ShortestPa
 
 void K_ShortestPathTableEntry::copy(const K_ShortestPathTableEntry& other)
 {
+    this->id = other.id;
     this->srcAddress = other.srcAddress;
     this->destAddress = other.destAddress;
     this->cost = other.cost;
@@ -222,6 +223,7 @@ void K_ShortestPathTableEntry::copy(const K_ShortestPathTableEntry& other)
 
 void K_ShortestPathTableEntry::parsimPack(omnetpp::cCommBuffer *b) const
 {
+    doParsimPacking(b,this->id);
     doParsimPacking(b,this->srcAddress);
     doParsimPacking(b,this->destAddress);
     doParsimPacking(b,this->cost);
@@ -231,6 +233,7 @@ void K_ShortestPathTableEntry::parsimPack(omnetpp::cCommBuffer *b) const
 
 void K_ShortestPathTableEntry::parsimUnpack(omnetpp::cCommBuffer *b)
 {
+    doParsimUnpacking(b,this->id);
     doParsimUnpacking(b,this->srcAddress);
     doParsimUnpacking(b,this->destAddress);
     doParsimUnpacking(b,this->cost);
@@ -242,6 +245,16 @@ void K_ShortestPathTableEntry::parsimUnpack(omnetpp::cCommBuffer *b)
         this->path = new double[path_arraysize];
         doParsimArrayUnpacking(b,this->path,path_arraysize);
     }
+}
+
+const char * K_ShortestPathTableEntry::getId() const
+{
+    return this->id.c_str();
+}
+
+void K_ShortestPathTableEntry::setId(const char * id)
+{
+    this->id = id;
 }
 
 int K_ShortestPathTableEntry::getSrcAddress() const
@@ -369,7 +382,7 @@ const char *K_ShortestPathTableEntryDescriptor::getProperty(const char *property
 int K_ShortestPathTableEntryDescriptor::getFieldCount() const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
-    return basedesc ? 4+basedesc->getFieldCount() : 4;
+    return basedesc ? 5+basedesc->getFieldCount() : 5;
 }
 
 unsigned int K_ShortestPathTableEntryDescriptor::getFieldTypeFlags(int field) const
@@ -384,9 +397,10 @@ unsigned int K_ShortestPathTableEntryDescriptor::getFieldTypeFlags(int field) co
         FD_ISEDITABLE,
         FD_ISEDITABLE,
         FD_ISEDITABLE,
+        FD_ISEDITABLE,
         FD_ISARRAY | FD_ISEDITABLE,
     };
-    return (field>=0 && field<4) ? fieldTypeFlags[field] : 0;
+    return (field>=0 && field<5) ? fieldTypeFlags[field] : 0;
 }
 
 const char *K_ShortestPathTableEntryDescriptor::getFieldName(int field) const
@@ -398,22 +412,24 @@ const char *K_ShortestPathTableEntryDescriptor::getFieldName(int field) const
         field -= basedesc->getFieldCount();
     }
     static const char *fieldNames[] = {
+        "id",
         "srcAddress",
         "destAddress",
         "cost",
         "path",
     };
-    return (field>=0 && field<4) ? fieldNames[field] : nullptr;
+    return (field>=0 && field<5) ? fieldNames[field] : nullptr;
 }
 
 int K_ShortestPathTableEntryDescriptor::findField(const char *fieldName) const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
     int base = basedesc ? basedesc->getFieldCount() : 0;
-    if (fieldName[0]=='s' && strcmp(fieldName, "srcAddress")==0) return base+0;
-    if (fieldName[0]=='d' && strcmp(fieldName, "destAddress")==0) return base+1;
-    if (fieldName[0]=='c' && strcmp(fieldName, "cost")==0) return base+2;
-    if (fieldName[0]=='p' && strcmp(fieldName, "path")==0) return base+3;
+    if (fieldName[0]=='i' && strcmp(fieldName, "id")==0) return base+0;
+    if (fieldName[0]=='s' && strcmp(fieldName, "srcAddress")==0) return base+1;
+    if (fieldName[0]=='d' && strcmp(fieldName, "destAddress")==0) return base+2;
+    if (fieldName[0]=='c' && strcmp(fieldName, "cost")==0) return base+3;
+    if (fieldName[0]=='p' && strcmp(fieldName, "path")==0) return base+4;
     return basedesc ? basedesc->findField(fieldName) : -1;
 }
 
@@ -426,12 +442,13 @@ const char *K_ShortestPathTableEntryDescriptor::getFieldTypeString(int field) co
         field -= basedesc->getFieldCount();
     }
     static const char *fieldTypeStrings[] = {
+        "string",
         "int",
         "int",
         "double",
         "double",
     };
-    return (field>=0 && field<4) ? fieldTypeStrings[field] : nullptr;
+    return (field>=0 && field<5) ? fieldTypeStrings[field] : nullptr;
 }
 
 const char **K_ShortestPathTableEntryDescriptor::getFieldPropertyNames(int field) const
@@ -470,7 +487,7 @@ int K_ShortestPathTableEntryDescriptor::getFieldArraySize(void *object, int fiel
     }
     K_ShortestPathTableEntry *pp = (K_ShortestPathTableEntry *)object; (void)pp;
     switch (field) {
-        case 3: return pp->getPathArraySize();
+        case 4: return pp->getPathArraySize();
         default: return 0;
     }
 }
@@ -499,10 +516,11 @@ std::string K_ShortestPathTableEntryDescriptor::getFieldValueAsString(void *obje
     }
     K_ShortestPathTableEntry *pp = (K_ShortestPathTableEntry *)object; (void)pp;
     switch (field) {
-        case 0: return long2string(pp->getSrcAddress());
-        case 1: return long2string(pp->getDestAddress());
-        case 2: return double2string(pp->getCost());
-        case 3: return double2string(pp->getPath(i));
+        case 0: return oppstring2string(pp->getId());
+        case 1: return long2string(pp->getSrcAddress());
+        case 2: return long2string(pp->getDestAddress());
+        case 3: return double2string(pp->getCost());
+        case 4: return double2string(pp->getPath(i));
         default: return "";
     }
 }
@@ -517,10 +535,11 @@ bool K_ShortestPathTableEntryDescriptor::setFieldValueAsString(void *object, int
     }
     K_ShortestPathTableEntry *pp = (K_ShortestPathTableEntry *)object; (void)pp;
     switch (field) {
-        case 0: pp->setSrcAddress(string2long(value)); return true;
-        case 1: pp->setDestAddress(string2long(value)); return true;
-        case 2: pp->setCost(string2double(value)); return true;
-        case 3: pp->setPath(i,string2double(value)); return true;
+        case 0: pp->setId((value)); return true;
+        case 1: pp->setSrcAddress(string2long(value)); return true;
+        case 2: pp->setDestAddress(string2long(value)); return true;
+        case 3: pp->setCost(string2double(value)); return true;
+        case 4: pp->setPath(i,string2double(value)); return true;
         default: return false;
     }
 }

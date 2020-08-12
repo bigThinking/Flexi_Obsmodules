@@ -1,5 +1,5 @@
 //
-// Generated file, do not edit! Created by nedtool 5.1 from src/Base/messages/Flexi_OBS_BurstControlPacket.msg.
+// Generated file, do not edit! Created by nedtool 5.4 from src/Base/messages/Flexi_OBS_BurstControlPacket.msg.
 //
 
 // Disable warnings about unused variables, empty switch stmts, etc:
@@ -184,6 +184,7 @@ Flexi_OBS_BurstControlPacket::Flexi_OBS_BurstControlPacket(const char *name, sho
     this->setByteLength(150);
     this->setIsControl(true);
 
+    this->burstId = 0;
     this->srcAddr = -1;
     this->destAddr = -1;
     this->assignedSpectrumCenter = -1;
@@ -237,6 +238,7 @@ Flexi_OBS_BurstControlPacket& Flexi_OBS_BurstControlPacket::operator=(const Flex
 
 void Flexi_OBS_BurstControlPacket::copy(const Flexi_OBS_BurstControlPacket& other)
 {
+    this->burstId = other.burstId;
     this->srcAddr = other.srcAddr;
     this->destAddr = other.destAddr;
     this->assignedSpectrumCenter = other.assignedSpectrumCenter;
@@ -275,6 +277,7 @@ void Flexi_OBS_BurstControlPacket::copy(const Flexi_OBS_BurstControlPacket& othe
 void Flexi_OBS_BurstControlPacket::parsimPack(omnetpp::cCommBuffer *b) const
 {
     ::TransmittedMessage_Base::parsimPack(b);
+    doParsimPacking(b,this->burstId);
     doParsimPacking(b,this->srcAddr);
     doParsimPacking(b,this->destAddr);
     doParsimPacking(b,this->assignedSpectrumCenter);
@@ -307,6 +310,7 @@ void Flexi_OBS_BurstControlPacket::parsimPack(omnetpp::cCommBuffer *b) const
 void Flexi_OBS_BurstControlPacket::parsimUnpack(omnetpp::cCommBuffer *b)
 {
     ::TransmittedMessage_Base::parsimUnpack(b);
+    doParsimUnpacking(b,this->burstId);
     doParsimUnpacking(b,this->srcAddr);
     doParsimUnpacking(b,this->destAddr);
     doParsimUnpacking(b,this->assignedSpectrumCenter);
@@ -346,6 +350,16 @@ void Flexi_OBS_BurstControlPacket::parsimUnpack(omnetpp::cCommBuffer *b)
     doParsimUnpacking(b,this->reservedChannelIndex);
     doParsimUnpacking(b,this->percentFreeWavelengths);
     doParsimUnpacking(b,this->killTime);
+}
+
+long Flexi_OBS_BurstControlPacket::getBurstId() const
+{
+    return this->burstId;
+}
+
+void Flexi_OBS_BurstControlPacket::setBurstId(long burstId)
+{
+    this->burstId = burstId;
 }
 
 int Flexi_OBS_BurstControlPacket::getSrcAddr() const
@@ -703,7 +717,7 @@ const char *Flexi_OBS_BurstControlPacketDescriptor::getProperty(const char *prop
 int Flexi_OBS_BurstControlPacketDescriptor::getFieldCount() const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
-    return basedesc ? 25+basedesc->getFieldCount() : 25;
+    return basedesc ? 26+basedesc->getFieldCount() : 26;
 }
 
 unsigned int Flexi_OBS_BurstControlPacketDescriptor::getFieldTypeFlags(int field) const
@@ -715,6 +729,7 @@ unsigned int Flexi_OBS_BurstControlPacketDescriptor::getFieldTypeFlags(int field
         field -= basedesc->getFieldCount();
     }
     static unsigned int fieldTypeFlags[] = {
+        FD_ISEDITABLE,
         FD_ISEDITABLE,
         FD_ISEDITABLE,
         FD_ISEDITABLE,
@@ -741,7 +756,7 @@ unsigned int Flexi_OBS_BurstControlPacketDescriptor::getFieldTypeFlags(int field
         FD_ISEDITABLE,
         FD_ISEDITABLE,
     };
-    return (field>=0 && field<25) ? fieldTypeFlags[field] : 0;
+    return (field>=0 && field<26) ? fieldTypeFlags[field] : 0;
 }
 
 const char *Flexi_OBS_BurstControlPacketDescriptor::getFieldName(int field) const
@@ -753,6 +768,7 @@ const char *Flexi_OBS_BurstControlPacketDescriptor::getFieldName(int field) cons
         field -= basedesc->getFieldCount();
     }
     static const char *fieldNames[] = {
+        "burstId",
         "srcAddr",
         "destAddr",
         "assignedSpectrumCenter",
@@ -779,38 +795,39 @@ const char *Flexi_OBS_BurstControlPacketDescriptor::getFieldName(int field) cons
         "percentFreeWavelengths",
         "killTime",
     };
-    return (field>=0 && field<25) ? fieldNames[field] : nullptr;
+    return (field>=0 && field<26) ? fieldNames[field] : nullptr;
 }
 
 int Flexi_OBS_BurstControlPacketDescriptor::findField(const char *fieldName) const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
     int base = basedesc ? basedesc->getFieldCount() : 0;
-    if (fieldName[0]=='s' && strcmp(fieldName, "srcAddr")==0) return base+0;
-    if (fieldName[0]=='d' && strcmp(fieldName, "destAddr")==0) return base+1;
-    if (fieldName[0]=='a' && strcmp(fieldName, "assignedSpectrumCenter")==0) return base+2;
-    if (fieldName[0]=='a' && strcmp(fieldName, "assignedSpectrumLowerBound")==0) return base+3;
-    if (fieldName[0]=='a' && strcmp(fieldName, "assignedSpectrumUpperBound")==0) return base+4;
-    if (fieldName[0]=='b' && strcmp(fieldName, "burstifierId")==0) return base+5;
-    if (fieldName[0]=='n' && strcmp(fieldName, "numSeq")==0) return base+6;
-    if (fieldName[0]=='b' && strcmp(fieldName, "burstOffset")==0) return base+7;
-    if (fieldName[0]=='b' && strcmp(fieldName, "burstSize")==0) return base+8;
-    if (fieldName[0]=='d' && strcmp(fieldName, "datarate")==0) return base+9;
-    if (fieldName[0]=='h' && strcmp(fieldName, "hasSetupTransmitter")==0) return base+10;
-    if (fieldName[0]=='d' && strcmp(fieldName, "distTravelled")==0) return base+11;
-    if (fieldName[0]=='s' && strcmp(fieldName, "shortestPathCost")==0) return base+12;
-    if (fieldName[0]=='n' && strcmp(fieldName, "nodeCounter")==0) return base+13;
-    if (fieldName[0]=='r' && strcmp(fieldName, "route")==0) return base+14;
-    if (fieldName[0]=='r' && strcmp(fieldName, "routePos")==0) return base+15;
-    if (fieldName[0]=='e' && strcmp(fieldName, "entryId")==0) return base+16;
-    if (fieldName[0]=='e' && strcmp(fieldName, "entryIds")==0) return base+17;
-    if (fieldName[0]=='r' && strcmp(fieldName, "recordPath")==0) return base+18;
-    if (fieldName[0]=='p' && strcmp(fieldName, "pathPos")==0) return base+19;
-    if (fieldName[0]=='c' && strcmp(fieldName, "componentIds")==0) return base+20;
-    if (fieldName[0]=='c' && strcmp(fieldName, "compPos")==0) return base+21;
-    if (fieldName[0]=='r' && strcmp(fieldName, "reservedChannelIndex")==0) return base+22;
-    if (fieldName[0]=='p' && strcmp(fieldName, "percentFreeWavelengths")==0) return base+23;
-    if (fieldName[0]=='k' && strcmp(fieldName, "killTime")==0) return base+24;
+    if (fieldName[0]=='b' && strcmp(fieldName, "burstId")==0) return base+0;
+    if (fieldName[0]=='s' && strcmp(fieldName, "srcAddr")==0) return base+1;
+    if (fieldName[0]=='d' && strcmp(fieldName, "destAddr")==0) return base+2;
+    if (fieldName[0]=='a' && strcmp(fieldName, "assignedSpectrumCenter")==0) return base+3;
+    if (fieldName[0]=='a' && strcmp(fieldName, "assignedSpectrumLowerBound")==0) return base+4;
+    if (fieldName[0]=='a' && strcmp(fieldName, "assignedSpectrumUpperBound")==0) return base+5;
+    if (fieldName[0]=='b' && strcmp(fieldName, "burstifierId")==0) return base+6;
+    if (fieldName[0]=='n' && strcmp(fieldName, "numSeq")==0) return base+7;
+    if (fieldName[0]=='b' && strcmp(fieldName, "burstOffset")==0) return base+8;
+    if (fieldName[0]=='b' && strcmp(fieldName, "burstSize")==0) return base+9;
+    if (fieldName[0]=='d' && strcmp(fieldName, "datarate")==0) return base+10;
+    if (fieldName[0]=='h' && strcmp(fieldName, "hasSetupTransmitter")==0) return base+11;
+    if (fieldName[0]=='d' && strcmp(fieldName, "distTravelled")==0) return base+12;
+    if (fieldName[0]=='s' && strcmp(fieldName, "shortestPathCost")==0) return base+13;
+    if (fieldName[0]=='n' && strcmp(fieldName, "nodeCounter")==0) return base+14;
+    if (fieldName[0]=='r' && strcmp(fieldName, "route")==0) return base+15;
+    if (fieldName[0]=='r' && strcmp(fieldName, "routePos")==0) return base+16;
+    if (fieldName[0]=='e' && strcmp(fieldName, "entryId")==0) return base+17;
+    if (fieldName[0]=='e' && strcmp(fieldName, "entryIds")==0) return base+18;
+    if (fieldName[0]=='r' && strcmp(fieldName, "recordPath")==0) return base+19;
+    if (fieldName[0]=='p' && strcmp(fieldName, "pathPos")==0) return base+20;
+    if (fieldName[0]=='c' && strcmp(fieldName, "componentIds")==0) return base+21;
+    if (fieldName[0]=='c' && strcmp(fieldName, "compPos")==0) return base+22;
+    if (fieldName[0]=='r' && strcmp(fieldName, "reservedChannelIndex")==0) return base+23;
+    if (fieldName[0]=='p' && strcmp(fieldName, "percentFreeWavelengths")==0) return base+24;
+    if (fieldName[0]=='k' && strcmp(fieldName, "killTime")==0) return base+25;
     return basedesc ? basedesc->findField(fieldName) : -1;
 }
 
@@ -823,6 +840,7 @@ const char *Flexi_OBS_BurstControlPacketDescriptor::getFieldTypeString(int field
         field -= basedesc->getFieldCount();
     }
     static const char *fieldTypeStrings[] = {
+        "long",
         "int",
         "int",
         "double",
@@ -849,7 +867,7 @@ const char *Flexi_OBS_BurstControlPacketDescriptor::getFieldTypeString(int field
         "double",
         "simtime_t",
     };
-    return (field>=0 && field<25) ? fieldTypeStrings[field] : nullptr;
+    return (field>=0 && field<26) ? fieldTypeStrings[field] : nullptr;
 }
 
 const char **Flexi_OBS_BurstControlPacketDescriptor::getFieldPropertyNames(int field) const
@@ -888,8 +906,8 @@ int Flexi_OBS_BurstControlPacketDescriptor::getFieldArraySize(void *object, int 
     }
     Flexi_OBS_BurstControlPacket *pp = (Flexi_OBS_BurstControlPacket *)object; (void)pp;
     switch (field) {
-        case 17: return pp->getEntryIdsArraySize();
-        case 20: return pp->getComponentIdsArraySize();
+        case 18: return pp->getEntryIdsArraySize();
+        case 21: return pp->getComponentIdsArraySize();
         default: return 0;
     }
 }
@@ -918,31 +936,32 @@ std::string Flexi_OBS_BurstControlPacketDescriptor::getFieldValueAsString(void *
     }
     Flexi_OBS_BurstControlPacket *pp = (Flexi_OBS_BurstControlPacket *)object; (void)pp;
     switch (field) {
-        case 0: return long2string(pp->getSrcAddr());
-        case 1: return long2string(pp->getDestAddr());
-        case 2: return double2string(pp->getAssignedSpectrumCenter());
-        case 3: return double2string(pp->getAssignedSpectrumLowerBound());
-        case 4: return double2string(pp->getAssignedSpectrumUpperBound());
-        case 5: return long2string(pp->getBurstifierId());
-        case 6: return long2string(pp->getNumSeq());
-        case 7: return simtime2string(pp->getBurstOffset());
-        case 8: return long2string(pp->getBurstSize());
-        case 9: return double2string(pp->getDatarate());
-        case 10: return bool2string(pp->getHasSetupTransmitter());
-        case 11: return long2string(pp->getDistTravelled());
-        case 12: return long2string(pp->getShortestPathCost());
-        case 13: return long2string(pp->getNodeCounter());
-        case 14: {std::stringstream out; out << pp->getRoute(); return out.str();}
-        case 15: return long2string(pp->getRoutePos());
-        case 16: return long2string(pp->getEntryId());
-        case 17: return long2string(pp->getEntryIds(i));
-        case 18: return bool2string(pp->getRecordPath());
-        case 19: return long2string(pp->getPathPos());
-        case 20: return long2string(pp->getComponentIds(i));
-        case 21: return long2string(pp->getCompPos());
-        case 22: return long2string(pp->getReservedChannelIndex());
-        case 23: return double2string(pp->getPercentFreeWavelengths());
-        case 24: return simtime2string(pp->getKillTime());
+        case 0: return long2string(pp->getBurstId());
+        case 1: return long2string(pp->getSrcAddr());
+        case 2: return long2string(pp->getDestAddr());
+        case 3: return double2string(pp->getAssignedSpectrumCenter());
+        case 4: return double2string(pp->getAssignedSpectrumLowerBound());
+        case 5: return double2string(pp->getAssignedSpectrumUpperBound());
+        case 6: return long2string(pp->getBurstifierId());
+        case 7: return long2string(pp->getNumSeq());
+        case 8: return simtime2string(pp->getBurstOffset());
+        case 9: return long2string(pp->getBurstSize());
+        case 10: return double2string(pp->getDatarate());
+        case 11: return bool2string(pp->getHasSetupTransmitter());
+        case 12: return long2string(pp->getDistTravelled());
+        case 13: return long2string(pp->getShortestPathCost());
+        case 14: return long2string(pp->getNodeCounter());
+        case 15: {std::stringstream out; out << pp->getRoute(); return out.str();}
+        case 16: return long2string(pp->getRoutePos());
+        case 17: return long2string(pp->getEntryId());
+        case 18: return long2string(pp->getEntryIds(i));
+        case 19: return bool2string(pp->getRecordPath());
+        case 20: return long2string(pp->getPathPos());
+        case 21: return long2string(pp->getComponentIds(i));
+        case 22: return long2string(pp->getCompPos());
+        case 23: return long2string(pp->getReservedChannelIndex());
+        case 24: return double2string(pp->getPercentFreeWavelengths());
+        case 25: return simtime2string(pp->getKillTime());
         default: return "";
     }
 }
@@ -957,30 +976,31 @@ bool Flexi_OBS_BurstControlPacketDescriptor::setFieldValueAsString(void *object,
     }
     Flexi_OBS_BurstControlPacket *pp = (Flexi_OBS_BurstControlPacket *)object; (void)pp;
     switch (field) {
-        case 0: pp->setSrcAddr(string2long(value)); return true;
-        case 1: pp->setDestAddr(string2long(value)); return true;
-        case 2: pp->setAssignedSpectrumCenter(string2double(value)); return true;
-        case 3: pp->setAssignedSpectrumLowerBound(string2double(value)); return true;
-        case 4: pp->setAssignedSpectrumUpperBound(string2double(value)); return true;
-        case 5: pp->setBurstifierId(string2long(value)); return true;
-        case 6: pp->setNumSeq(string2long(value)); return true;
-        case 7: pp->setBurstOffset(string2simtime(value)); return true;
-        case 8: pp->setBurstSize(string2long(value)); return true;
-        case 9: pp->setDatarate(string2double(value)); return true;
-        case 10: pp->setHasSetupTransmitter(string2bool(value)); return true;
-        case 11: pp->setDistTravelled(string2long(value)); return true;
-        case 12: pp->setShortestPathCost(string2long(value)); return true;
-        case 13: pp->setNodeCounter(string2long(value)); return true;
-        case 15: pp->setRoutePos(string2long(value)); return true;
-        case 16: pp->setEntryId(string2long(value)); return true;
-        case 17: pp->setEntryIds(i,string2long(value)); return true;
-        case 18: pp->setRecordPath(string2bool(value)); return true;
-        case 19: pp->setPathPos(string2long(value)); return true;
-        case 20: pp->setComponentIds(i,string2long(value)); return true;
-        case 21: pp->setCompPos(string2long(value)); return true;
-        case 22: pp->setReservedChannelIndex(string2long(value)); return true;
-        case 23: pp->setPercentFreeWavelengths(string2double(value)); return true;
-        case 24: pp->setKillTime(string2simtime(value)); return true;
+        case 0: pp->setBurstId(string2long(value)); return true;
+        case 1: pp->setSrcAddr(string2long(value)); return true;
+        case 2: pp->setDestAddr(string2long(value)); return true;
+        case 3: pp->setAssignedSpectrumCenter(string2double(value)); return true;
+        case 4: pp->setAssignedSpectrumLowerBound(string2double(value)); return true;
+        case 5: pp->setAssignedSpectrumUpperBound(string2double(value)); return true;
+        case 6: pp->setBurstifierId(string2long(value)); return true;
+        case 7: pp->setNumSeq(string2long(value)); return true;
+        case 8: pp->setBurstOffset(string2simtime(value)); return true;
+        case 9: pp->setBurstSize(string2long(value)); return true;
+        case 10: pp->setDatarate(string2double(value)); return true;
+        case 11: pp->setHasSetupTransmitter(string2bool(value)); return true;
+        case 12: pp->setDistTravelled(string2long(value)); return true;
+        case 13: pp->setShortestPathCost(string2long(value)); return true;
+        case 14: pp->setNodeCounter(string2long(value)); return true;
+        case 16: pp->setRoutePos(string2long(value)); return true;
+        case 17: pp->setEntryId(string2long(value)); return true;
+        case 18: pp->setEntryIds(i,string2long(value)); return true;
+        case 19: pp->setRecordPath(string2bool(value)); return true;
+        case 20: pp->setPathPos(string2long(value)); return true;
+        case 21: pp->setComponentIds(i,string2long(value)); return true;
+        case 22: pp->setCompPos(string2long(value)); return true;
+        case 23: pp->setReservedChannelIndex(string2long(value)); return true;
+        case 24: pp->setPercentFreeWavelengths(string2double(value)); return true;
+        case 25: pp->setKillTime(string2simtime(value)); return true;
         default: return false;
     }
 }
@@ -994,7 +1014,7 @@ const char *Flexi_OBS_BurstControlPacketDescriptor::getFieldStructName(int field
         field -= basedesc->getFieldCount();
     }
     switch (field) {
-        case 14: return omnetpp::opp_typename(typeid(pathPtr));
+        case 15: return omnetpp::opp_typename(typeid(pathPtr));
         default: return nullptr;
     };
 }
@@ -1009,7 +1029,7 @@ void *Flexi_OBS_BurstControlPacketDescriptor::getFieldStructValuePointer(void *o
     }
     Flexi_OBS_BurstControlPacket *pp = (Flexi_OBS_BurstControlPacket *)object; (void)pp;
     switch (field) {
-        case 14: return (void *)(&pp->getRoute()); break;
+        case 15: return (void *)(&pp->getRoute()); break;
         default: return nullptr;
     }
 }

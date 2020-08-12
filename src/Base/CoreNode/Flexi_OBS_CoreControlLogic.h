@@ -23,6 +23,7 @@
 #include "Flexi_OBS_BurstControlPacket_m.h"
 #include "EndToEndAck_m.h"
 #include "Flexi_OBS_CoreRoutingTable.h"
+#include "OBS_CoreNodeInfo_m.h"
 
 using namespace omnetpp;
 /**
@@ -33,7 +34,7 @@ class Flexi_OBS_CoreControlLogic : public cSimpleModule
 protected:
     Flexi_OBS_OpticalCrossConnect* oxc;
     simsignal_t lostBCPId;
-    int gridType;
+    int gridType, ipAddr = -1;
     bool inSuperNode;
     double spectrumLowerBound, spectrumUpperBound, assignedSpectrumWidth;
     simtime_t processingDelay, conversionDelay, coreNodeProcessingTime, switchingDelay;

@@ -1,5 +1,5 @@
 //
-// Generated file, do not edit! Created by nedtool 5.1 from src/Base/messages/Flexi_OBS_BurstRouterInfo.msg.
+// Generated file, do not edit! Created by nedtool 5.4 from src/Base/messages/Flexi_OBS_BurstRouterInfo.msg.
 //
 
 // Disable warnings about unused variables, empty switch stmts, etc:

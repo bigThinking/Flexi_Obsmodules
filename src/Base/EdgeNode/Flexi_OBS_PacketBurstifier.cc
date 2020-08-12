@@ -68,12 +68,18 @@ void Flexi_OBS_PacketBurstifier::handleMessage(cMessage *msg)
         return;
     }
 
-    INetworkProtocolControlInfo *controlInfo = check_and_cast<INetworkProtocolControlInfo*>(msg->getControlInfo());
-    if(numBurstPackets > 0 && controlInfo->getDestinationAddress().toIPv4().getInt() != destLabel){
+    Packet *recvIP = dynamic_cast<Packet*> (msg);
+    L3AddressReq* tag = recvIP->findTag<L3AddressReq>();
+    int destAddress = -1;
+
+    if(tag)
+       destAddress = tag->getDestAddress().toIpv4().getInt();
+
+    if(numBurstPackets > 0 && destAddress != destLabel){
         delete(msg);
         EV_ERROR<< "Packet sent to wrong burstifier";
         return;
-    }else if(numBurstPackets == 0) destLabel = controlInfo->getDestinationAddress().toIPv4().getInt();
+    }else if(numBurstPackets == 0) destLabel = destAddress;
 
     switch(assembly)//Else.... is it a IP Datagram?
     {

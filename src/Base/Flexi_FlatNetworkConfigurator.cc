@@ -34,6 +34,8 @@ void Flexi_FlatNetworkConfigurator::initialize(int stage)
         // update display string
         setDisplayString(topo, nodeInfo);
 
+        printGateNodes(topo);
+
         printElapsedTime("", startTime);
     }
 }
@@ -68,8 +70,8 @@ void Flexi_FlatNetworkConfigurator::extractTopology(cTopology& topo, NodeInfoVec
 void Flexi_FlatNetworkConfigurator::assignAddresses(cTopology& topo, NodeInfoVector& nodeInfo)
 {
     // assign IPv4 addresses
-    uint32 networkAddress = IPv4Address(par("networkAddress").stringValue()).getInt();
-    uint32 netmask = IPv4Address(par("netmask").stringValue()).getInt();
+    uint32 networkAddress = Ipv4Address(par("networkAddress").stringValue()).getInt();
+    uint32 netmask = Ipv4Address(par("netmask").stringValue()).getInt();
     int maxNodes = (~netmask)-1;  // 0 and ffff have special meaning and cannot be used
     if (topo.getNumNodes()>maxNodes)
         error("netmask too large, not enough addresses for all %d nodes", topo.getNumNodes());
@@ -91,11 +93,8 @@ void Flexi_FlatNetworkConfigurator::assignAddresses(cTopology& topo, NodeInfoVec
             InterfaceEntry *ie = ift->getInterface(k);
             if (!ie->isLoopback())
             {
-                IPv4Address *address = new IPv4Address(addr);
-                IPv4InterfaceData data;
-                data.setIPAddress(*address);
-                data.setNetmask(IPv4Address::ALLONES_ADDRESS);// full address must match for local delivery
-                ie->setIPv4Data(&data);
+                ie->addProtocolDataIfAbsent<Ipv4InterfaceData>()->setIPAddress(Ipv4Address(addr));
+                ie->getProtocolData<Ipv4InterfaceData>()->setNetmask(Ipv4Address::ALLONES_ADDRESS);    // full address must match for local delivery
             }
         }
     }
@@ -109,10 +108,9 @@ void Flexi_FlatNetworkConfigurator::assignAddresses(cTopology& topo, NodeInfoVec
                 continue;
 
             string destAddresses = "";
-            // find interface table and assign address to all (non-loopback) interfaces
             IInterfaceTable *ift = nodeInfo[i].ift;
             InterfaceEntry *ie = ift->getInterface(0);
-            IPv4Address addr = ie->ipv4Data()->getIPAddress();
+            Ipv4Address addr = ie->addProtocolDataIfAbsent<Ipv4InterfaceData>()->getIPAddress();
 
             for(int j =0; j < topo.getNumNodes(); j++)
             {
@@ -122,7 +120,7 @@ void Flexi_FlatNetworkConfigurator::assignAddresses(cTopology& topo, NodeInfoVec
                 IInterfaceTable *ift = nodeInfo[j].ift;
                 InterfaceEntry *ie = ift->getInterface(0);
                 //IPv4Address addr = ie->ipv4Data()->getIPAddress();
-                IPv4Address addr = nodeInfo[j].address;
+                Ipv4Address addr = nodeInfo[j].address;
                 destAddresses = destAddresses + addr.str(false) + " ";
             }
 
@@ -161,9 +159,9 @@ void Flexi_FlatNetworkConfigurator::addDefaultRoutes(cTopology& topo, NodeInfoVe
                 << " has only one (non-loopback) interface, adding default route\n";
 
         // add route
-        IPv4Route *e = new IPv4Route();
-        e->setDestination(IPv4Address());
-        e->setNetmask(IPv4Address());
+        Ipv4Route *e = new Ipv4Route();
+        e->setDestination(Ipv4Address());
+        e->setNetmask(Ipv4Address());
         e->setInterface(ie);
         e->setSourceType(IRoute::MANUAL);
         //e->getMetric() = 1;
@@ -189,7 +187,7 @@ void Flexi_FlatNetworkConfigurator::fillShortestPathRoutingTables(cTopology& _to
         if (srcNode->getNumOutLinks()==0)
             continue; // not conected
 
-        IPv4Address srcAddr = nodeInfo[i].address;
+        Ipv4Address srcAddr = nodeInfo[i].address;
         std::string srcModName = srcNode->getModule()->getFullName();
 
         for(int j=i+1; j<topo.getNumNodes(); j++)
@@ -198,7 +196,7 @@ void Flexi_FlatNetworkConfigurator::fillShortestPathRoutingTables(cTopology& _to
                 continue;
 
             cTopology::Node *destNode = topo.getNode(j);
-            IPv4Address destAddr = nodeInfo[j].address;
+            Ipv4Address destAddr = nodeInfo[j].address;
             std::string destModName = destNode->getModule()->getFullName();
 
             // calculate shortest paths from srcNode to destNode
@@ -222,14 +220,17 @@ void Flexi_FlatNetworkConfigurator::fillShortestPathRoutingTables(cTopology& _to
             vector<double> path = routes[j];
             K_ShortestPathTableEntry *entry = new K_ShortestPathTableEntry();
 
+            entry->setCost(path[path.size()-1]);
+            entry->setSrcAddress(addr);
+            entry->setPathArraySize(path.size()-3);
+            int counter = 0;
+
             if(path[0] == addr)//addr is src
             {
-                entry->setCost(path[path.size()-1]);
-                entry->setSrcAddress(addr);
                 entry->setDestAddress(path[path.size()-2]);
-                entry->setPathArraySize(path.size()-3);
+               // entry->setId((std::to_string(addr) + "-" + std::to_string(intrand(1000))).c_str());
+                entry->setId((std::to_string(addr) + "-" + std::to_string(j)).c_str());
 
-                int counter = 0;
                 for(int k = 1; k < path.size()-2; k++)
                     entry->setPath(counter++, path[k]);
 
@@ -237,12 +238,9 @@ void Flexi_FlatNetworkConfigurator::fillShortestPathRoutingTables(cTopology& _to
 
             }else if(path[path.size()-2] == addr)//addr is dest
             {
-                entry->setCost(path[path.size()-1]);
-                entry->setSrcAddress(addr);
                 entry->setDestAddress(path[0]);
-                entry->setPathArraySize(path.size()-3);
+                entry->setId((std::to_string(addr) + "-" + std::to_string(j)).c_str());
 
-                int counter = 0;
                 for(int k = path.size()-3; k > 0; k--)
                     entry->setPath(counter++, path[k]);
 
@@ -272,7 +270,7 @@ void Flexi_FlatNetworkConfigurator::fillShortestPathRoutingTables(cTopology& _to
                     continue;
 
                 cTopology::Node *destNode = topo.getNode(j);
-                IPv4Address destAddr = nodeInfo[j].address;
+                Ipv4Address destAddr = nodeInfo[j].address;
                 std::string destModName = destNode->getModule()->getFullName();
 
                 if(destNode->getNumInLinks() == 0)
@@ -303,6 +301,14 @@ void Flexi_FlatNetworkConfigurator::fillShortestPathRoutingTables(cTopology& _to
             }
         }
     }
+}
+
+void Flexi_FlatNetworkConfigurator::printGateNodes(Flexi_WeightedTopology& topo)
+{
+    file = new std::ofstream();
+    file->open("GateNodes");
+    (*file)<< topo.printGateNodes();
+    file->close();
 }
 
 void Flexi_FlatNetworkConfigurator::handleMessage(cMessage *msg)
@@ -345,7 +351,7 @@ void Flexi_FlatNetworkConfigurator::fillRoutingTables(cTopology& _topo, NodeInfo
         if (!nodeInfo[i].isIPNode)
             continue;
 
-        IPv4Address destAddr = nodeInfo[i].address;
+        Ipv4Address destAddr = nodeInfo[i].address;
         std::string destModName = destNode->getModule()->getFullName();
 
         // calculate shortest paths from everywhere towards destNode
@@ -365,7 +371,7 @@ void Flexi_FlatNetworkConfigurator::fillRoutingTables(cTopology& _topo, NodeInfo
             if (nodeInfo[j].usesDefaultRoute)
                 continue; // already added default route here
 
-            IPv4Address atAddr = nodeInfo[j].address;
+            Ipv4Address atAddr = nodeInfo[j].address;
 
             IInterfaceTable *ift = nodeInfo[j].ift;
 
@@ -374,14 +380,14 @@ void Flexi_FlatNetworkConfigurator::fillRoutingTables(cTopology& _topo, NodeInfo
             if (!ie)
                 error("%s has no interface for output gate id %d", ift->getFullPath().c_str(), outputGateId);
 
-            EV << "  from " << atNode->getModule()->getFullName() << "=" << IPv4Address(atAddr);
-            EV << " towards " << destModName << "=" << IPv4Address(destAddr) << " interface " << ie->getName() << endl;
+            EV << "  from " << atNode->getModule()->getFullName() << "=" << Ipv4Address(atAddr);
+            EV << " towards " << destModName << "=" << Ipv4Address(destAddr) << " interface " << ie->getInterfaceName() << endl;
 
             // add route
             IRoutingTable *rt = nodeInfo[j].rt;
-            IPv4Route *e = new IPv4Route();
-            e->setDestination(IPv4Address());
-            e->setNetmask(IPv4Address());
+            Ipv4Route *e = new Ipv4Route();
+            e->setDestination(Ipv4Address());
+            e->setNetmask(Ipv4Address());
             e->setInterface(ie);
             e->setSourceType(IRoute::MANUAL);
             //e->getMetric() = 1;

@@ -96,6 +96,7 @@ private:
             int maxRoutesPerNode, int srcAddr, int destAddr);
 
     virtual void extractFromNetwork(bool (*selfunc)(cModule *,void *), void *userdata=nullptr);
+    virtual string printGateNodes();
 
     protected:
     virtual WNode *createNode(cModule *module) { return new WNode(module->getId()); }

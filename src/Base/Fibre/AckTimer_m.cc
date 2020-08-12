@@ -1,5 +1,5 @@
 //
-// Generated file, do not edit! Created by nedtool 5.1 from src/Base/Fibre/AckTimer.msg.
+// Generated file, do not edit! Created by nedtool 5.4 from src/Base/Fibre/AckTimer.msg.
 //
 
 // Disable warnings about unused variables, empty switch stmts, etc:
@@ -182,6 +182,9 @@ Register_Class(AckTimer)
 AckTimer::AckTimer(const char *name, short kind) : ::omnetpp::cMessage(name,kind)
 {
     this->creationTime = 0;
+    this->spectrumCenter = 0;
+    this->spectrumLowerBound = 0;
+    this->spectrumUpperBound = 0;
     this->burstifierId = 0;
     this->numSeq = 0;
     this->senderId = 0;
@@ -216,6 +219,9 @@ AckTimer& AckTimer::operator=(const AckTimer& other)
 void AckTimer::copy(const AckTimer& other)
 {
     this->creationTime = other.creationTime;
+    this->spectrumCenter = other.spectrumCenter;
+    this->spectrumLowerBound = other.spectrumLowerBound;
+    this->spectrumUpperBound = other.spectrumUpperBound;
     this->burstifierId = other.burstifierId;
     this->numSeq = other.numSeq;
     this->senderId = other.senderId;
@@ -235,6 +241,9 @@ void AckTimer::parsimPack(omnetpp::cCommBuffer *b) const
 {
     ::omnetpp::cMessage::parsimPack(b);
     doParsimPacking(b,this->creationTime);
+    doParsimPacking(b,this->spectrumCenter);
+    doParsimPacking(b,this->spectrumLowerBound);
+    doParsimPacking(b,this->spectrumUpperBound);
     doParsimPacking(b,this->burstifierId);
     doParsimPacking(b,this->numSeq);
     doParsimPacking(b,this->senderId);
@@ -251,6 +260,9 @@ void AckTimer::parsimUnpack(omnetpp::cCommBuffer *b)
 {
     ::omnetpp::cMessage::parsimUnpack(b);
     doParsimUnpacking(b,this->creationTime);
+    doParsimUnpacking(b,this->spectrumCenter);
+    doParsimUnpacking(b,this->spectrumLowerBound);
+    doParsimUnpacking(b,this->spectrumUpperBound);
     doParsimUnpacking(b,this->burstifierId);
     doParsimUnpacking(b,this->numSeq);
     doParsimUnpacking(b,this->senderId);
@@ -277,6 +289,36 @@ void AckTimer::parsimUnpack(omnetpp::cCommBuffer *b)
 void AckTimer::setCreationTime(::omnetpp::simtime_t creationTime)
 {
     this->creationTime = creationTime;
+}
+
+double AckTimer::getSpectrumCenter() const
+{
+    return this->spectrumCenter;
+}
+
+void AckTimer::setSpectrumCenter(double spectrumCenter)
+{
+    this->spectrumCenter = spectrumCenter;
+}
+
+double AckTimer::getSpectrumLowerBound() const
+{
+    return this->spectrumLowerBound;
+}
+
+void AckTimer::setSpectrumLowerBound(double spectrumLowerBound)
+{
+    this->spectrumLowerBound = spectrumLowerBound;
+}
+
+double AckTimer::getSpectrumUpperBound() const
+{
+    return this->spectrumUpperBound;
+}
+
+void AckTimer::setSpectrumUpperBound(double spectrumUpperBound)
+{
+    this->spectrumUpperBound = spectrumUpperBound;
 }
 
 int AckTimer::getBurstifierId() const
@@ -454,7 +496,7 @@ const char *AckTimerDescriptor::getProperty(const char *propertyname) const
 int AckTimerDescriptor::getFieldCount() const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
-    return basedesc ? 10+basedesc->getFieldCount() : 10;
+    return basedesc ? 13+basedesc->getFieldCount() : 13;
 }
 
 unsigned int AckTimerDescriptor::getFieldTypeFlags(int field) const
@@ -474,10 +516,13 @@ unsigned int AckTimerDescriptor::getFieldTypeFlags(int field) const
         FD_ISEDITABLE,
         FD_ISEDITABLE,
         FD_ISEDITABLE,
+        FD_ISEDITABLE,
+        FD_ISEDITABLE,
+        FD_ISEDITABLE,
         FD_ISARRAY | FD_ISEDITABLE,
         FD_ISCOMPOUND,
     };
-    return (field>=0 && field<10) ? fieldTypeFlags[field] : 0;
+    return (field>=0 && field<13) ? fieldTypeFlags[field] : 0;
 }
 
 const char *AckTimerDescriptor::getFieldName(int field) const
@@ -490,6 +535,9 @@ const char *AckTimerDescriptor::getFieldName(int field) const
     }
     static const char *fieldNames[] = {
         "creationTime",
+        "spectrumCenter",
+        "spectrumLowerBound",
+        "spectrumUpperBound",
         "burstifierId",
         "numSeq",
         "senderId",
@@ -500,7 +548,7 @@ const char *AckTimerDescriptor::getFieldName(int field) const
         "entryIds",
         "route",
     };
-    return (field>=0 && field<10) ? fieldNames[field] : nullptr;
+    return (field>=0 && field<13) ? fieldNames[field] : nullptr;
 }
 
 int AckTimerDescriptor::findField(const char *fieldName) const
@@ -508,15 +556,18 @@ int AckTimerDescriptor::findField(const char *fieldName) const
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
     int base = basedesc ? basedesc->getFieldCount() : 0;
     if (fieldName[0]=='c' && strcmp(fieldName, "creationTime")==0) return base+0;
-    if (fieldName[0]=='b' && strcmp(fieldName, "burstifierId")==0) return base+1;
-    if (fieldName[0]=='n' && strcmp(fieldName, "numSeq")==0) return base+2;
-    if (fieldName[0]=='s' && strcmp(fieldName, "senderId")==0) return base+3;
-    if (fieldName[0]=='e' && strcmp(fieldName, "entryId")==0) return base+4;
-    if (fieldName[0]=='r' && strcmp(fieldName, "routePos")==0) return base+5;
-    if (fieldName[0]=='s' && strcmp(fieldName, "shortestPathCost")==0) return base+6;
-    if (fieldName[0]=='d' && strcmp(fieldName, "distTravelled")==0) return base+7;
-    if (fieldName[0]=='e' && strcmp(fieldName, "entryIds")==0) return base+8;
-    if (fieldName[0]=='r' && strcmp(fieldName, "route")==0) return base+9;
+    if (fieldName[0]=='s' && strcmp(fieldName, "spectrumCenter")==0) return base+1;
+    if (fieldName[0]=='s' && strcmp(fieldName, "spectrumLowerBound")==0) return base+2;
+    if (fieldName[0]=='s' && strcmp(fieldName, "spectrumUpperBound")==0) return base+3;
+    if (fieldName[0]=='b' && strcmp(fieldName, "burstifierId")==0) return base+4;
+    if (fieldName[0]=='n' && strcmp(fieldName, "numSeq")==0) return base+5;
+    if (fieldName[0]=='s' && strcmp(fieldName, "senderId")==0) return base+6;
+    if (fieldName[0]=='e' && strcmp(fieldName, "entryId")==0) return base+7;
+    if (fieldName[0]=='r' && strcmp(fieldName, "routePos")==0) return base+8;
+    if (fieldName[0]=='s' && strcmp(fieldName, "shortestPathCost")==0) return base+9;
+    if (fieldName[0]=='d' && strcmp(fieldName, "distTravelled")==0) return base+10;
+    if (fieldName[0]=='e' && strcmp(fieldName, "entryIds")==0) return base+11;
+    if (fieldName[0]=='r' && strcmp(fieldName, "route")==0) return base+12;
     return basedesc ? basedesc->findField(fieldName) : -1;
 }
 
@@ -530,6 +581,9 @@ const char *AckTimerDescriptor::getFieldTypeString(int field) const
     }
     static const char *fieldTypeStrings[] = {
         "simtime_t",
+        "double",
+        "double",
+        "double",
         "int",
         "int",
         "int",
@@ -540,7 +594,7 @@ const char *AckTimerDescriptor::getFieldTypeString(int field) const
         "int",
         "pathPtr",
     };
-    return (field>=0 && field<10) ? fieldTypeStrings[field] : nullptr;
+    return (field>=0 && field<13) ? fieldTypeStrings[field] : nullptr;
 }
 
 const char **AckTimerDescriptor::getFieldPropertyNames(int field) const
@@ -579,7 +633,7 @@ int AckTimerDescriptor::getFieldArraySize(void *object, int field) const
     }
     AckTimer *pp = (AckTimer *)object; (void)pp;
     switch (field) {
-        case 8: return pp->getEntryIdsArraySize();
+        case 11: return pp->getEntryIdsArraySize();
         default: return 0;
     }
 }
@@ -609,15 +663,18 @@ std::string AckTimerDescriptor::getFieldValueAsString(void *object, int field, i
     AckTimer *pp = (AckTimer *)object; (void)pp;
     switch (field) {
         case 0: return simtime2string(pp->getCreationTime());
-        case 1: return long2string(pp->getBurstifierId());
-        case 2: return long2string(pp->getNumSeq());
-        case 3: return long2string(pp->getSenderId());
-        case 4: return long2string(pp->getEntryId());
-        case 5: return long2string(pp->getRoutePos());
-        case 6: return long2string(pp->getShortestPathCost());
-        case 7: return long2string(pp->getDistTravelled());
-        case 8: return long2string(pp->getEntryIds(i));
-        case 9: {std::stringstream out; out << pp->getRoute(); return out.str();}
+        case 1: return double2string(pp->getSpectrumCenter());
+        case 2: return double2string(pp->getSpectrumLowerBound());
+        case 3: return double2string(pp->getSpectrumUpperBound());
+        case 4: return long2string(pp->getBurstifierId());
+        case 5: return long2string(pp->getNumSeq());
+        case 6: return long2string(pp->getSenderId());
+        case 7: return long2string(pp->getEntryId());
+        case 8: return long2string(pp->getRoutePos());
+        case 9: return long2string(pp->getShortestPathCost());
+        case 10: return long2string(pp->getDistTravelled());
+        case 11: return long2string(pp->getEntryIds(i));
+        case 12: {std::stringstream out; out << pp->getRoute(); return out.str();}
         default: return "";
     }
 }
@@ -633,14 +690,17 @@ bool AckTimerDescriptor::setFieldValueAsString(void *object, int field, int i, c
     AckTimer *pp = (AckTimer *)object; (void)pp;
     switch (field) {
         case 0: pp->setCreationTime(string2simtime(value)); return true;
-        case 1: pp->setBurstifierId(string2long(value)); return true;
-        case 2: pp->setNumSeq(string2long(value)); return true;
-        case 3: pp->setSenderId(string2long(value)); return true;
-        case 4: pp->setEntryId(string2long(value)); return true;
-        case 5: pp->setRoutePos(string2long(value)); return true;
-        case 6: pp->setShortestPathCost(string2long(value)); return true;
-        case 7: pp->setDistTravelled(string2long(value)); return true;
-        case 8: pp->setEntryIds(i,string2long(value)); return true;
+        case 1: pp->setSpectrumCenter(string2double(value)); return true;
+        case 2: pp->setSpectrumLowerBound(string2double(value)); return true;
+        case 3: pp->setSpectrumUpperBound(string2double(value)); return true;
+        case 4: pp->setBurstifierId(string2long(value)); return true;
+        case 5: pp->setNumSeq(string2long(value)); return true;
+        case 6: pp->setSenderId(string2long(value)); return true;
+        case 7: pp->setEntryId(string2long(value)); return true;
+        case 8: pp->setRoutePos(string2long(value)); return true;
+        case 9: pp->setShortestPathCost(string2long(value)); return true;
+        case 10: pp->setDistTravelled(string2long(value)); return true;
+        case 11: pp->setEntryIds(i,string2long(value)); return true;
         default: return false;
     }
 }
@@ -654,7 +714,7 @@ const char *AckTimerDescriptor::getFieldStructName(int field) const
         field -= basedesc->getFieldCount();
     }
     switch (field) {
-        case 9: return omnetpp::opp_typename(typeid(pathPtr));
+        case 12: return omnetpp::opp_typename(typeid(pathPtr));
         default: return nullptr;
     };
 }
@@ -669,7 +729,7 @@ void *AckTimerDescriptor::getFieldStructValuePointer(void *object, int field, in
     }
     AckTimer *pp = (AckTimer *)object; (void)pp;
     switch (field) {
-        case 9: return (void *)(&pp->getRoute()); break;
+        case 12: return (void *)(&pp->getRoute()); break;
         default: return nullptr;
     }
 }

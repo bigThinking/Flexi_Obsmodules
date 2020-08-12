@@ -15,13 +15,10 @@
 
 package flexi_obsmodules.src.Base.EdgeNode;
 
-import inet.applications.generic.IPvXTrafGen;
+import inet.applications.generic.IpvxTrafGen;
 import inet.networklayer.common.InterfaceTable;
 import flexi_obsmodules.src.Base.K_ShortestPathTable;
 
-//
-// //change ipforward of edge nodes, if want routing to only be done through edge nodes
-//
 module Flexi_OBS_EdgeNode
 {
     parameters:
@@ -43,7 +40,7 @@ module Flexi_OBS_EdgeNode
         k_ShortestPathTable: K_ShortestPathTable {
             @display("p=84,43");
         }
-        iPvXTrafGen: IPvXTrafGen {
+        iPvXTrafGen: IpvxTrafGen {
             @display("p=160,132");
         }
     connections allowunconnected:

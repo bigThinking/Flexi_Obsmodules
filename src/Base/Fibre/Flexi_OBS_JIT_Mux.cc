@@ -28,6 +28,7 @@ void Flexi_OBS_JIT_Mux::initialize()
     bcpTraversalAckMultiplier = par("bcpTraversalAckTimerMultiplier");
 
     WATCH_VECTOR(wavelengthInUseArray);
+
 }
 
 void Flexi_OBS_JIT_Mux::handleMessage(cMessage *msg)
@@ -79,6 +80,7 @@ bool Flexi_OBS_JIT_Mux::doReservationAndSignalling(Flexi_OBS_BurstControlPacket*
         lostBcpDestination.record(bcp->getDestAddr());
         bcpLost++;
         controlMessageLost++;
+        bcpLoss = (double)bcpLost/bcpCounter;
         emit(lostBCPId,1);
 
         EV_INFO <<"FAILED RESERVATION ATTEMPT"<< bcp->getAssignedSpectrumCenter()<<endl;
@@ -115,7 +117,9 @@ bool Flexi_OBS_JIT_Mux::doReservationAndSignalling(Flexi_OBS_BurstControlPacket*
     ret =  doJIT(bcp);
 
     if(ret){
-        if(enableImpairments){
+        bcp->setTransmissionEntry(nullptr);
+
+        if(enableImpairments && !impairmentFreeControlChannels){
             TransmissionEntry* entry = new TransmissionEntry("transmissionEntry");
 
             double specCenter, specLower, specUpper, datarate;
@@ -163,6 +167,7 @@ bool Flexi_OBS_JIT_Mux::doReservationAndSignalling(Flexi_OBS_BurstControlPacket*
         controlMessageLost++;
         lostBcpSources.record(bcp->getSrcAddr());
         lostBcpDestination.record(bcp->getDestAddr());
+        bcpLoss = (double)bcpLost/bcpCounter;
 
         double center = bcp->getAssignedSpectrumCenter();
         double lower = bcp->getAssignedSpectrumLowerBound();
@@ -301,6 +306,8 @@ bool Flexi_OBS_JIT_Mux::assignFirstFitWavelength(Flexi_OBS_BurstControlPacket* b
 
 bool Flexi_OBS_JIT_Mux::assignFlexiWavelengthRandom(Flexi_OBS_BurstControlPacket* bcp)
 {
+    int reqNumberOfSlots = ceil(bcp->getDatarate()/(assignedSpectrumWidth*pow(10,9)));
+
     int start = intrand(numOfWavelengths),counter = start;
 
     while(wavelengthInUseArray[counter])
@@ -312,22 +319,61 @@ bool Flexi_OBS_JIT_Mux::assignFlexiWavelengthRandom(Flexi_OBS_BurstControlPacket
     }
 
     start = counter;
-    int end = start+1;
 
-    while(((end-start)*(assignedSpectrumWidth*pow(10,9)))/bcp->getDatarate() < 1)
-        end++;
+    counter = 1;
+    double lower = 0, upper = 0;
+    bool moveLeft = true, moveRight = true;
 
-    if(end > numOfWavelengths)
+    while(counter < reqNumberOfSlots && (moveLeft || moveRight))
+    {
+        if(((spectrumLowerBound + ((start+1)*assignedSpectrumWidth) + ((upper+1) *assignedSpectrumWidth)) <= spectrumUpperBound) && !wavelengthInUseArray[start+upper+1] && counter < reqNumberOfSlots){
+            upper++;
+            counter++;
+            moveRight = true;
+        }else moveRight = false;
+
+        if(((spectrumLowerBound + (start*assignedSpectrumWidth)) - ((lower+1) *assignedSpectrumWidth) >= spectrumLowerBound) && !wavelengthInUseArray[start-lower-1] && counter < reqNumberOfSlots){
+            lower++;
+            counter++;
+            moveLeft = true;
+        }else moveLeft = false;
+    }
+
+    if(counter < reqNumberOfSlots)
         return false;
 
-    double chosenCenter = spectrumLowerBound + assignedSpectrumWidth/2 + start*assignedSpectrumWidth;
+    bcp->setAssignedSpectrumLowerBound((spectrumLowerBound + (start*assignedSpectrumWidth)) - ((lower) *assignedSpectrumWidth));
+    bcp->setAssignedSpectrumUpperBound(spectrumLowerBound + ((start+1)*assignedSpectrumWidth) + ((upper) *assignedSpectrumWidth));
+    bcp->setAssignedSpectrumCenter(bcp->getAssignedSpectrumLowerBound() + (bcp->getAssignedSpectrumUpperBound() - bcp->getAssignedSpectrumLowerBound())/2);
 
-    bcp->setAssignedSpectrumCenter(chosenCenter);
-    bcp->setAssignedSpectrumUpperBound(spectrumLowerBound + (end*assignedSpectrumWidth));
-    bcp->setAssignedSpectrumLowerBound(spectrumLowerBound + (start*assignedSpectrumWidth));
-    transmissionCenters.record(bcp->getAssignedSpectrumCenter());
+    int numberOfChannels = (bcp->getAssignedSpectrumUpperBound()-bcp->getAssignedSpectrumLowerBound())/assignedSpectrumWidth;
+    ASSERT(numberOfChannels == reqNumberOfSlots);
+    int startIndex = (bcp->getAssignedSpectrumLowerBound()-spectrumLowerBound)/assignedSpectrumWidth;
+    ASSERT(startIndex == (start-lower));
+    bool allFree =  true;
 
-    return true;
+    for(int i = startIndex; i < startIndex + numberOfChannels; i++)
+    {
+        if(wavelengthInUseArray[i]){
+            allFree = false;
+            break;
+        }
+    }
+
+    if(allFree)//reserve channel
+    {
+        int count = 0;
+        while(count < numberOfChannels)
+        {
+            wavelengthInUseArray[startIndex] = true;
+            startIndex++;
+            count++;
+        }
+
+        transmissionCenters.record(bcp->getAssignedSpectrumCenter());
+    }
+
+    return allFree;
 }
 
 bool Flexi_OBS_JIT_Mux::assignWavelength(Flexi_OBS_BurstControlPacket* bcp)
@@ -341,16 +387,29 @@ bool Flexi_OBS_JIT_Mux::assignWavelength(Flexi_OBS_BurstControlPacket* bcp)
         double upper = bcp->getAssignedSpectrumUpperBound();
         int numberOfChannels = (upper-lower)/assignedSpectrumWidth;
         int startIndex = (lower-spectrumLowerBound)/assignedSpectrumWidth;
+        bool allFree =  true;
 
-        int count = 0;
-        while(count < numberOfChannels)
+        for(int i = startIndex; i < startIndex + numberOfChannels; i++)
         {
-            wavelengthInUseArray[startIndex] = true;
-            startIndex++;
-            count++;
+            if(wavelengthInUseArray[i]){
+                allFree = false;
+                break;
+            }
         }
-        transmissionCenters.record(bcp->getAssignedSpectrumCenter());
-        return true;
+
+        if(allFree)//reserve channel
+        {
+
+            int count = 0;
+            while(count < numberOfChannels)
+            {
+                wavelengthInUseArray[startIndex] = true;
+                startIndex++;
+                count++;
+            }
+            transmissionCenters.record(bcp->getAssignedSpectrumCenter());
+        }
+        return allFree;
     }
     case 1: return assignFirstFitWavelength(bcp);
     case 2: return assignRandomWavelength(bcp);
@@ -373,6 +432,9 @@ void Flexi_OBS_JIT_Mux::startAckTimer(Flexi_OBS_BurstControlPacket *bcp, simtime
     timer->setSenderId(bcp->getSrcAddr());
     timer->setRoute(bcp->getRoute());
     timer->setRoutePos(bcp->getRoutePos());
+    timer->setSpectrumCenter(bcp->getAssignedSpectrumCenter());
+    timer->setSpectrumLowerBound(bcp->getAssignedSpectrumLowerBound());
+    timer->setSpectrumUpperBound(bcp->getAssignedSpectrumUpperBound());
 
     if(bcp->getRecordPath()){
         timer->setEntryIdsArraySize(bcp->getEntryIdsArraySize());
@@ -432,6 +494,9 @@ bool Flexi_OBS_JIT_Mux::doJIT(Flexi_OBS_BurstControlPacket* bcp)
     if(index == -1) return false;
 
     reservation reserve = reservation(index, bcp->getNumSeq(), bcp->getBurstifierId(), bcp->getBurstSize(), bcp->getBurstOffset(), true);
+    reserve.spectrumCenter = bcp->getAssignedSpectrumCenter();
+    reserve.spectrumLowerBound = bcp->getAssignedSpectrumLowerBound();
+    reserve.spectrumUpperBound = bcp->getAssignedSpectrumUpperBound();
     bcp->setReservedChannelIndex(index);
 
     reservations.push_back(reserve);
@@ -456,12 +521,27 @@ void  Flexi_OBS_JIT_Mux::handleAckTimer(cMessage* msg)
     //process ack timer by freeing reservation and sending EndToEndAck message
     AckTimer* timer = check_and_cast<AckTimer*>(msg);
     int channelIndex = -1;
+
     for(int i = 0; i < reservations.size(); i++)
     {
-        if(reservations[i].burstifierId == timer->getBurstifierId() && reservations[i].numseq == timer->getNumSeq())
-        {
+        if(reservations[i].burstifierId == timer->getBurstifierId() && reservations[i].numseq == timer->getNumSeq()){
             channelIndex = reservations[i].index;
             tearDownLightPath(reservations[i].index);
+
+            double lower = timer->getSpectrumLowerBound();
+            double upper = timer->getSpectrumUpperBound();
+
+            int numberOfChannels = (upper-lower)/assignedSpectrumWidth;
+            int startIndex = (lower-spectrumLowerBound)/assignedSpectrumWidth;
+
+            int count = 0;
+            while(count < numberOfChannels)
+            {
+                wavelengthInUseArray[startIndex] = false;
+                startIndex++;
+                count++;
+            }
+
             reservations.erase(reservations.begin()+i);
             break;
         }
@@ -540,9 +620,49 @@ bool Flexi_OBS_JIT_Mux::doReservationReceiverSide(Flexi_OBS_BurstControlPacket* 
         outChannel->par(inUsePos).setBoolValue(true);
 
         reservation reserve = reservation(index, bcp->getNumSeq(), bcp->getBurstifierId(), bcp->getBurstSize(), bcp->getBurstOffset(), false);
+        reserve.spectrumCenter = center;
+        reserve.spectrumLowerBound = lower;
+        reserve.spectrumUpperBound = upper;
         reservations.push_back(reserve);
 
         startReservationTimer(bcp, false);
+    }
+
+    if(endToEndAckEnabled && !allFree){
+        EndToEndAck* failedMessage = new EndToEndAck("failedBcpAck");
+        failedMessage->setIsControl(true);
+        failedMessage->setSenderId(bcp->getSrcAddr());
+        failedMessage->setSchedulingPriority(2);
+
+        if(bcp->getRecordPath()){
+            failedMessage->setEntryIdPos(bcp->getPathPos());
+            failedMessage->setEntryIdsArraySize(bcp->getEntryIdsArraySize());
+            for(int i =0; i < bcp->getEntryIdsArraySize(); i++){
+                failedMessage->setEntryIds(i, bcp->getEntryIds(i));
+            }
+        }else failedMessage->setEntry_Id(bcp->getEntryId());
+
+        failedMessage->setNumSeq(bcp->getNumSeq());
+        failedMessage->setBurstifierId(bcp->getBurstifierId());
+        failedMessage->setRoutePos(bcp->getRoutePos()-3);
+        failedMessage->setRoute(bcp->getRoute());
+        failedMessage->setShortestPathCost(bcp->getShortestPathCost());
+        failedMessage->setDistTravelled(bcp->getDistTravelled());
+        insertCtlMsgIntoQueue(failedMessage);
+        emit(nackSentId, false);
+
+        int index = bcp->getReservedChannelIndex();
+        int baseIdIn = gateBaseId("muxInOut$i");
+        int baseIdOut = gateBaseId("muxInOut$o");
+
+        cGate *gateIn = gate(baseIdIn+index)->getPreviousGate();
+        cGate *gateOut = gate(baseIdOut+index);
+
+        cChannel *inChannel = gateIn->getChannel();
+        cChannel *outChannel = gateOut->getChannel();
+
+        inChannel->par(inUsePos).setBoolValue(false);
+        outChannel->par(inUsePos).setBoolValue(false);
     }
 
     return allFree;
@@ -569,7 +689,6 @@ void Flexi_OBS_JIT_Mux::cancelReservation(ReservationTimer* timer)
                 startIndex++;
                 count++;
             }
-
 
             reservations.erase(reservations.begin()+i);
             break;
@@ -607,6 +726,46 @@ bool Flexi_OBS_JIT_Mux::doProcessingIfMessageReadable(cMessage *msg)
         return true;
     }
 
+    //remove reservation on endtoendack
+    if(strcmp(msg->getName(), "failedBcpAck")==0){
+        EndToEndAck* e = check_and_cast<EndToEndAck*>(msg);
+
+        int channelIndex = -1;
+
+        for(int i = 0; i < reservations.size(); i++)
+        {
+            if(reservations[i].burstifierId == e->getBurstifierId() && reservations[i].numseq == e->getNumSeq()){
+                channelIndex = reservations[i].index;
+                tearDownLightPath(reservations[i].index);
+
+                double lower = reservations[i].spectrumLowerBound;
+                double upper = reservations[i].spectrumUpperBound;
+
+                int numberOfChannels = (upper-lower)/assignedSpectrumWidth;
+                int startIndex = (lower-spectrumLowerBound)/assignedSpectrumWidth;
+
+                int count = 0;
+                while(count < numberOfChannels)
+                {
+                    wavelengthInUseArray[startIndex] = false;
+                    startIndex++;
+                    count++;
+                }
+
+                reservations.erase(reservations.begin()+i);
+                break;
+            }
+        }
+
+        if(reservationTimerEnabled && channelIndex >= 0)
+            cancelAndDeleteReservationTimer(channelIndex, e->getBurstifierId(), e->getNumSeq(), e->getSenderId());
+
+        if(bcpTraversalAckEnabled)
+            cancelAckTimer(e->getBurstifierId(), e->getNumSeq(), e->getSenderId());
+
+        return false;
+    }
+
     return false;
 }
 
@@ -614,6 +773,88 @@ void Flexi_OBS_JIT_Mux::doProcessingBeforeSendingCtlMsg(cMessage *msg)
 {
     if(strcmp(msg->getName(), "ANT")==0){
         Flexi_OBS_BurstControlPacket* bcp = dynamic_cast<Flexi_OBS_BurstControlPacket *>(msg);
-        bcp->setPercentFreeWavelengths(determinePercentageFreeWavelengths());
+        double p =  determinePercentageFreeWavelengths();
+        bcp->setPercentFreeWavelengths(bcp->getPercentFreeWavelengths() >  p ?  p : bcp->getPercentFreeWavelengths());
     }
+
+    //remove reservation on end to end ack
+    if(strcmp(msg->getName(), "failedBcpAck")==0){
+        EndToEndAck* e = check_and_cast<EndToEndAck*>(msg);
+
+        int channelIndex = -1;
+
+        for(int i = 0; i < reservations.size(); i++)
+        {
+            if(reservations[i].burstifierId == e->getBurstifierId() && reservations[i].numseq == e->getNumSeq()){
+                channelIndex = reservations[i].index;
+                tearDownLightPath(reservations[i].index);
+
+                double lower = reservations[i].spectrumLowerBound;
+                double upper = reservations[i].spectrumUpperBound;
+
+                int numberOfChannels = (upper-lower)/assignedSpectrumWidth;
+                int startIndex = (lower-spectrumLowerBound)/assignedSpectrumWidth;
+
+                int count = 0;
+                while(count < numberOfChannels)
+                {
+                    wavelengthInUseArray[startIndex] = false;
+                    startIndex++;
+                    count++;
+                }
+
+                reservations.erase(reservations.begin()+i);
+                break;
+            }
+        }
+
+        if(reservationTimerEnabled && channelIndex >= 0)
+            cancelAndDeleteReservationTimer(channelIndex, e->getBurstifierId(), e->getNumSeq(), e->getSenderId());
+
+        if(bcpTraversalAckEnabled)
+            cancelAckTimer(e->getBurstifierId(), e->getNumSeq(), e->getSenderId());
+    }
+}
+
+void Flexi_OBS_JIT_Mux::doCollectMeasures()
+{
+   vector<int> ranges;
+   int x = 0;
+   bool onFreeRange = false;
+
+   for(int i = 0; i < wavelengthInUseArray.size(); i++){
+       if(i > 0 && i < wavelengthInUseArray.size()-1)
+         x = x + (wavelengthInUseArray[i]^wavelengthInUseArray[i-1]);
+
+       if(!wavelengthInUseArray[i] && !onFreeRange)
+       {
+           ranges.push_back(i);
+           onFreeRange = true;
+       }else if(wavelengthInUseArray[i] && onFreeRange)
+       {
+           ranges.push_back(i-1);
+           onFreeRange = false;
+       }
+    }
+
+   double ue = ((double)x)/(wavelengthInUseArray.size()-1);
+   fragmentationUE.record(ue);
+   int maxFreeBlockSize = 0;
+   double shf = 0, sum = 0;
+   int size = wavelengthInUseArray.size();
+   int rangesSize = (int)(ranges.size()-1);
+   for(int i = 0; i < rangesSize; i++){
+       if((i+1)%2 == 0)
+           continue;
+
+       x = ranges[i+1] - ranges[i] + 1;
+       shf = shf + ((x/size)*log(size/x));
+       sum = sum + x;
+       if(x > maxFreeBlockSize)
+           maxFreeBlockSize = x;
+   }
+
+   double ef = 1-(maxFreeBlockSize/sum);
+   fragmentationSHF.record(shf);
+   fragmentationEF.record(ef);
 }

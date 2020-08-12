@@ -21,4 +21,5 @@ package flexi_obsmodules.src.Base;
 simple K_ShortestPathTable
 {
     @display("i=block/table2");
+    bool recordTableEntries = default(false);
 }

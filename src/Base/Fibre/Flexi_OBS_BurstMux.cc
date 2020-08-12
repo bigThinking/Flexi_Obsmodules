@@ -25,6 +25,7 @@ void Flexi_OBS_BurstMux::initialize(){
     wavelengthAssignmentType = par("wavelengthAssignmentType");
     enableImpairments = par("enableImpairments");
     enablePriorityQueuing = par("enablePriorityQueuing");
+    impairmentFreeControlChannels = par("impairmentFreeControlChannels");
 
     infiniteControlQueueLength = maxControlQueueLength <=0;
     c = 0;
@@ -38,11 +39,13 @@ void Flexi_OBS_BurstMux::initialize(){
     propagationDelay = fibreLength * propagationDelayPerKm;
     guardTime = propagationDelay/2;
 
+    bcpLoss = 0;
     burstLoss = 0;
     burstCounter = 0;
     controlMessageLost = 0;
     burstDroppedAtSource = 0;
     bcpLost = 0;
+    bcpCounter = 0;
     controlMessageDroppedByQueue = 0;
     burstLost = 0;
     controlMessageLostByImpairments = 0;
@@ -55,6 +58,8 @@ void Flexi_OBS_BurstMux::initialize(){
     offsetTimes.setName("offsetTimes");
     transmissionCenters.setName("transmission wavelength");
     WATCH(bcpLost);
+    WATCH(bcpLoss);
+    WATCH(bcpCounter);
     WATCH(burstLost);
     WATCH(controlMessageLost);
     WATCH(controlMessageDroppedByQueue);
@@ -78,6 +83,12 @@ void Flexi_OBS_BurstMux::initialize(){
     controlChannelOut->setDelay(propagationDelay.dbl());
     controlChannelIn->setDelay(propagationDelay.dbl());
     table = check_and_cast<FibreTable*>(getParentModule()->getSubmodule("fibreTable"));
+
+    if(par("collectMeasures"))
+    {
+        collectMeasures = new cMessage("collectMeasures");
+        scheduleAt(simTime() + 3, collectMeasures);
+    }
 
     switch(gridType)
     {
@@ -113,41 +124,47 @@ void Flexi_OBS_BurstMux::opticalLogic(TransmittedMessage_Base* msg, bool justPas
         if(table)
         {
             TransmissionEntry* entry = msg->getTransmissionEntry();
-            set<TransmissionEntry*>* entriesFromSource = table->getEntriesBetweenTimes(position == Mux::Right ? Mux::Left : Mux::Right,
-                    msg->getSendingTime(), msg->getArrivalTime());
-            set<TransmissionEntry*>* entriesFromDestination = table->getEntriesBetweenTimes(position, msg->getSendingTime(), msg->getArrivalTime());
 
-            entriesFromSource->erase(entry);
+            if(entry != nullptr){
+                set<TransmissionEntry*>* entriesFromSource = table->getEntriesBetweenTimes(position == Mux::Right ? Mux::Left : Mux::Right,
+                        msg->getSendingTime(), msg->getArrivalTime());
+                set<TransmissionEntry*>* entriesFromDestination = table->getEntriesBetweenTimes(position, msg->getSendingTime(), msg->getArrivalTime());
 
-            double C = 0;
-            if(entriesFromDestination->size() != 0)
-            {
-                double intermediate = 0;
-                for(set<TransmissionEntry*>::iterator it = entriesFromDestination->begin(); it!=entriesFromDestination->end(); it++)
+                entriesFromSource->erase(entry);
+
+                double C = 0;
+                if(entriesFromDestination->size() != 0)
                 {
-                    intermediate += (entry->getBitrate()/(*it)->getBitrate()) *(pow(10, (*it)->getPower()/10)/ pow(10, entry->getPower()/10))
-                                                                                                                                                                                                                                                                                                                                                     * (1/((*it)->getSpectrumCenter()-entry->getSpectrumCenter()));
-                }
-                C = C + (k*intermediate*fibreLength);
-            }
-
-            if(entriesFromSource->size() != 0)
-            {
-                double intermediate = 0;
-                for(set<TransmissionEntry*>::iterator it = entriesFromSource->begin(); it!=entriesFromSource->end(); it++)
-                {
-                    if(!((entry->getStartTime() > (*it)->getStartTime() && entry->getEndTime() > (*it)->getEndTime()) ||
-                            ((*it)->getStartTime() > entry->getStartTime() && (*it)->getEndTime() > entry->getEndTime()))){
-                        intermediate += (entry->getBitrate()/(*it)->getBitrate())*(pow(10, (*it)->getPower()/10)/ pow(10, entry->getPower()/10))
-                                                                                                                                                                                                                                                                                                                                                       * (1/((*it)->getSpectrumCenter()-entry->getSpectrumCenter()));
+                    double intermediate = 0;
+                    for(set<TransmissionEntry*>::iterator it = entriesFromDestination->begin(); it!=entriesFromDestination->end(); it++)
+                    {
+                        intermediate += (entry->getBitrate()/(*it)->getBitrate()) *(pow(10, (*it)->getPower()/10)/ pow(10, entry->getPower()/10))
+                                                                                                                                                                                                                                                                                                                                                                                                                                     * (1/((*it)->getSpectrumCenter()-entry->getSpectrumCenter()));
                     }
+                    C = C + (k*intermediate*fibreLength);
                 }
-                C = C + (k*intermediate*fibreLength);
+
+                if(entriesFromSource->size() != 0)
+                {
+                    double intermediate = 0;
+                    for(set<TransmissionEntry*>::iterator it = entriesFromSource->begin(); it!=entriesFromSource->end(); it++)
+                    {
+                        if(!((entry->getStartTime() > (*it)->getStartTime() && entry->getEndTime() > (*it)->getEndTime()) ||
+                                ((*it)->getStartTime() > entry->getStartTime() && (*it)->getEndTime() > entry->getEndTime()))){
+                            intermediate += (entry->getBitrate()/(*it)->getBitrate())*(pow(10, (*it)->getPower()/10)/ pow(10, entry->getPower()/10))
+                                                                                                                                                                                                                                                                                                                                                                                                                                       * (1/((*it)->getSpectrumCenter()-entry->getSpectrumCenter()));
+                        }
+                    }
+                    C = C + (k*intermediate*fibreLength);
+                }
+
+                msg->setSourcePower(msg->getSourcePower()-attenuation-C);
+
+                entry->setReadyForDeletion(true);
+
+                delete entriesFromSource;
+                delete entriesFromDestination;
             }
-
-            msg->setSourcePower(msg->getSourcePower()-attenuation-C);
-
-            entry->setReadyForDeletion(true);
         }
     }
 }
@@ -169,24 +186,38 @@ void Flexi_OBS_BurstMux::handleMessage(cMessage *msg){
     {
         //process control queue
         if(strcmp(msg->getName(), "controlQueue") == 0 && !controlChannelQueue.isEmpty())
-        {
             sendCtlMsg();
-        }else if(strcmp(msg->getName(), "resTimer") == 0){
+        else if(strcmp(msg->getName(), "resTimer") == 0)
             handleReservationTimer(msg);
-        }else doSelfMessageProcessing(msg);
+        else if(strcmp(msg->getName(), "collectMeasures") == 0)
+        {
+            doCollectMeasures();
+            scheduleAt(simTime()+1, collectMeasures);
+        }
+        else doSelfMessageProcessing(msg);
     }else{
         cGate *inGate = msg->getArrivalGate();
 
         //if message was transmitted over fiber
         if(strcmp(inGate->getBaseName(), "muxInOut") == 0)
         {
-            int index = inGate->getIndex();
+            int inGateIndex = inGate->getIndex();
 
             //if burst channel, check if channel was properly reserved. if not delete msg. channel is torn down by reservation timer or release message
-            if((hasOwnControlChannel && index > 1) || (!hasOwnControlChannel && index > 0)){
+            if((hasOwnControlChannel && inGateIndex > 1) || (!hasOwnControlChannel && inGateIndex > 0)){
                 burstCounter++;
 
+                OBS_Burst *burst = dynamic_cast<OBS_Burst *> (msg);
+
+                //debug code
+                //bool no;
+                //if(burst->getBurstifierId() == 95 && burst->getNumSeq() == 390)
+               //     no = true;
+
                 cChannel *inChannel = inGate->getPreviousGate()->getChannel();
+                int baseIdOut = gateBaseId("muxInOut$o");
+                cGate *gateOut = gate(baseIdOut+inGateIndex);
+                cChannel *outChannel = gateOut->getChannel();
 
                 if(inChannel)
                 {
@@ -196,6 +227,9 @@ void Flexi_OBS_BurstMux::handleMessage(cMessage *msg){
                             burstLostByFailedReservation++;
                             burstLost++;
                             burstLoss = (double)burstLost/burstCounter;
+
+                            inChannel->par(inUsePos).setBoolValue(false);
+                            outChannel->par(inUsePos).setBoolValue(false);
 
                             EV_INFO << "BURST LOSS = " << burstLoss;
                             delete(msg);
@@ -208,6 +242,9 @@ void Flexi_OBS_BurstMux::handleMessage(cMessage *msg){
                             burstLost++;
                             burstLoss = (double)burstLost/burstCounter;
 
+                            inChannel->par(inUsePos).setBoolValue(false);
+                            outChannel->par(inUsePos).setBoolValue(false);
+
                             EV_INFO << "BURST LOSS = " << burstLoss;
                             delete(msg);
                             emit(lostBurstId, 2);
@@ -217,11 +254,12 @@ void Flexi_OBS_BurstMux::handleMessage(cMessage *msg){
                 }
             }
 
+
             opticalLogic(dynamic_cast<TransmittedMessage_Base*>(msg), true);
 
             if(isMessageReadable(dynamic_cast<TransmittedMessage_Base*>(msg))){
 
-                if(!((hasOwnControlChannel && index > 1) || (!hasOwnControlChannel && index > 0))){
+                if(!((hasOwnControlChannel && inGateIndex > 1) || (!hasOwnControlChannel && inGateIndex > 0))){
                     TransmittedMessage_Base* msg1 = check_and_cast<TransmittedMessage_Base*>(msg);
                     msg1->setHasPassedFirstStation(false);//control messages are always read and retransmitted
                 }
@@ -230,6 +268,10 @@ void Flexi_OBS_BurstMux::handleMessage(cMessage *msg){
 
                 if(strcmp(msg->getName(), "BCP")==0){
                     Flexi_OBS_BurstControlPacket* bcp = dynamic_cast<Flexi_OBS_BurstControlPacket *>(msg);
+                    //bool no;
+                   // if(bcp->getBurstifierId() == 95 && bcp->getNumSeq() == 390)
+                    //    no = true;
+                    bcpCounter++;
 
                     int index = bcp->getReservedChannelIndex();
                     int size = gateSize("muxInOut$i");
@@ -257,10 +299,16 @@ void Flexi_OBS_BurstMux::handleMessage(cMessage *msg){
                                 inChannel->par("rightReservationSuccessful").setBoolValue(false);
                                 outChannel->par("rightReservationSuccessful").setBoolValue(false);
                             }
+
+                            inChannel->par(inUsePos).setBoolValue(true);
+                            outChannel->par(inUsePos).setBoolValue(true);
                         }
+
+                        controlMessageLost++;
                         lostBcpSources.record(bcp->getSrcAddr());
                         lostBcpDestination.record(bcp->getDestAddr());
                         bcpLost++;
+                        bcpLoss = (double)bcpLost/bcpCounter;
 
                         emit(lostBCPId, 1);
                         delete(msg);
@@ -271,13 +319,17 @@ void Flexi_OBS_BurstMux::handleMessage(cMessage *msg){
                 send(msg, "toNode$o");
             }else{//if message unreadable
 
-                if(!((hasOwnControlChannel && index > 1) || (!hasOwnControlChannel && index > 0))){
+                if(!((hasOwnControlChannel && inGateIndex > 1) || (!hasOwnControlChannel && inGateIndex > 0))){
                     controlMessageLost++;
                     controlMessageLostByImpairments++;
 
                     //if bcp not readable reservation is not made
                     if(strcmp(msg->getName(), "BCP")==0){
                         Flexi_OBS_BurstControlPacket* bcp = dynamic_cast<Flexi_OBS_BurstControlPacket *>(msg);
+
+                        //bool no;
+                        //if(bcp->getBurstifierId() == 95 && bcp->getNumSeq() == 390)
+                        //    no = true;
 
                         int index = bcp->getReservedChannelIndex();
                         int baseIdOut = gateBaseId("muxInOut$o");
@@ -304,11 +356,13 @@ void Flexi_OBS_BurstMux::handleMessage(cMessage *msg){
                                 inChannel->par("rightReservationSuccessful").setBoolValue(false);
                                 outChannel->par("rightReservationSuccessful").setBoolValue(false);
                             }
+
+                            inChannel->par(inUsePos).setBoolValue(true);
+                            outChannel->par(inUsePos).setBoolValue(true);
                         }
 
                         lostBcpSources.record(bcp->getSrcAddr());
                         lostBcpDestination.record(bcp->getDestAddr());
-                        bcpLost++;
 
                         emit(lostBCPId, 3);
                     }
@@ -335,7 +389,7 @@ void Flexi_OBS_BurstMux::handleMessage(cMessage *msg){
         {
             controlMessageFromNode++;
 
-            if(strcmp(msg->getName(), "BCP")==0) recvedBcpsFromNode++;
+            if(strcmp(msg->getName(), "BCP")==0) {recvedBcpsFromNode++; bcpCounter++;}
 
             doProcessingBeforeSendingCtlMsg(msg);
 
@@ -348,9 +402,10 @@ void Flexi_OBS_BurstMux::handleMessage(cMessage *msg){
 void Flexi_OBS_BurstMux::finish(){
     cancelAndDelete(processControlQueue);
 
+    recordScalar("bcp lost", bcpLost);
     recordScalar("burst lost",burstLost);
     recordScalar("control message Lost", controlMessageLost);
-    recordScalar("bcp Lost", bcpLost);
+    recordScalar("bcp Loss at Mux", bcpLoss);
     recordScalar("control message dropped by queue",controlMessageDroppedByQueue);
     recordScalar("control message lost by impairments", controlMessageLostByImpairments);
     recordScalar("burst lost due to failed reservation", burstLostByFailedReservation);
@@ -361,6 +416,8 @@ void Flexi_OBS_BurstMux::finish(){
     recordScalar("Burst Dropped at source", burstDroppedAtSource);
     recordScalar("BCPs pending to be sent (because the control channel is busy)", controlChannelQueue.getLength());
     recordScalar("BurstLossProbabilityForMux", burstLoss);
+    recordScalar("Burst Received", burstCounter);
+    recordScalar("BCP received", bcpCounter);
 }
 
 int Flexi_OBS_BurstMux::createLightPath(double spectrumCenter, double spectrumLowerBound, double spectrumUpperBound, double datarate, bool createTransmitter)
@@ -462,12 +519,15 @@ int Flexi_OBS_BurstMux::createLightPath(double spectrumCenter, double spectrumLo
 
     cChannelType *channelFactory;
     if(!createTransmitter)
-        channelFactory = cChannelType::get("flexi_obsmodules.src.Base.Fibre.SpectrumChannelDelay");
+        channelFactory = cChannelType::get("obsmodules.src.Base.Fibre.SpectrumChannelDelay");
     else
-        channelFactory = cChannelType::get("flexi_obsmodules.src.Base.Fibre.SpectrumChannelTransmitter");
+        channelFactory = cChannelType::get("obsmodules.src.Base.Fibre.SpectrumChannelTransmitter");
 
     cChannel *inChannel = channelFactory->create("inChannel");
     cChannel *outChannel = channelFactory->create("outChannel");
+
+    //    nextMux->gate(controlGateOut->getPathEndGate()->getBaseId()+size)->connectTo(gateIn, inChannel);
+    //    gateOut->connectTo(nextMux->gate(controlGateIn->getPathStartGate()->getBaseId()+size), outChannel);
 
     nextMux->gate(controlGateIn->getPathStartGate()->getBaseId()+size)->connectTo(gateIn, inChannel);
     gateOut->connectTo(nextMux->gate(controlGateOut->getPathEndGate()->getBaseId()+size), outChannel);
@@ -677,6 +737,10 @@ bool Flexi_OBS_BurstMux::sendCtlMsg()
     {
         Flexi_OBS_BurstControlPacket* bcp = check_and_cast<Flexi_OBS_BurstControlPacket*>(msg);
 
+        //bool no;
+        //if(bcp->getBurstifierId() == 96 && bcp->getNumSeq() == 420)
+         //   no = true;
+
         bool ret = doReservationAndSignalling(bcp);
 
         offsetTimes.record(bcp->getBurstOffset());
@@ -690,7 +754,9 @@ bool Flexi_OBS_BurstMux::sendCtlMsg()
 
     opticalLogic(msg, false);
 
-    if(enableImpairments){
+    msg->setTransmissionEntry(nullptr);
+
+    if(enableImpairments && !impairmentFreeControlChannels){
         TransmissionEntry* entry = new TransmissionEntry("transmissionEntry");
         double specCenter = controlChannelOut->par("assignedSpectrumCenter");
         double specLower = controlChannelOut->par("assignedSpectrumLowerBound");
@@ -739,6 +805,7 @@ void Flexi_OBS_BurstMux::insertCtlMsgIntoQueue(cMessage* msg)
             lostBcpSources.record(bcp->getSrcAddr());
             lostBcpDestination.record(bcp->getDestAddr());
             bcpLost++;
+            bcpLoss = (double)bcpLost/bcpCounter;
 
             emit(lostBCPId, 2);
         }
@@ -758,3 +825,124 @@ int Flexi_OBS_BurstMux::controlComparator(cObject *obj1, cObject *obj2)
 
     return msg->getSchedulingPriority() == msg1->getSchedulingPriority() ? 0 : (msg->getSchedulingPriority() > msg1->getSchedulingPriority() ? 1:-1);
 }
+
+//try{
+//       OBS_Burst *burst = check_and_cast<OBS_Burst *> (msg);
+//
+//       if(burst == NULL)
+//       burstSize.record(burst->getByteLength()); // Record burst length and update burst counter
+//       burstRecv++;
+//       }catch(cRuntimeError&)
+//       {
+//           try{
+//               Flexi_OBS_BurstControlPacket *bcp = check_and_cast<Flexi_OBS_BurstControlPacket *>(msg);
+//           }catch(cRuntimeError&){
+//
+//           }
+//       }
+
+//if(transmissionTimerEnabled){
+//       TransmissionTimer* timer = new TransmissionTimer("transTimer");
+//       timer->setMsgSize(bcp->getBurstSize());
+//       timer->setMsgOffset(bcp->getBurstOffset());
+//       timer->setSpectrumCenter(bcp->getAssignedSpectrumCenter());
+//       timer->setSpectrumLowerBound(bcp->getAssignedSpectrumLowerBound());
+//       timer->setSpectrumUpperBound(bcp->getAssignedSpectrumUpperBound());
+//       timer->setTimerStart(simTime.dbl());
+//       timer->setChannelIndex(bcp.getReservedChannelIndex());
+//
+//       int baseIdIn = gateBaseId("muxInOut$i");
+//       cGate *inGate = gate(baseIdIn+bcp.getReservedChannelIndex());
+//       cDatarateChannel*  channel = check_and_cast<cDatarateChannel*>(inGate->findIncomingTransmissionChannel());
+//
+//       cPacket* temp = new cPacket();
+//       temp->setByteLength(bcp->getBurstSize());
+//       timer->setMsgDuration(channel->calculateDuration(temp) + (propagationDelayPerKm*fibreLength));
+//
+//       timer->setTimerEnd(simTime.dbl() + timer->getMsgDuration() + bcp->getBurstOffset());
+//       scheduleAt(timer->getTimerEnd(), timer);
+//       transmissionTimers.insert({timer->getChannelIndex(), timer});
+//   }
+//}
+
+//else if(strcmp(msg->getName(), "transTimer") == 0){
+//            TransmissionTimer* timer = check_and_cast<TransmissionTimer*>(msg);
+//            tearDownLightPath(timer->getChannelIndex());
+//            transmissionTimers.erase(transmissionTimers.find(timer->getChannelIndex()));
+//            delete(timer);
+//        }
+
+
+//
+//        //Ack gets preferred treatment
+//        if(proccessControlQueue->isScheduled() || controlChannelOut->isBusy() || controlChannelIn->isBusy())
+//            controlChannelQueue.isEmpty() ? controlChannelQueue.insert(ack) : controlChannelQueue.insertBefore(controlChannelQueue.front(), ack);
+//        else
+//        {
+//            TransmissionEntry* entry = new TransmissionEntry("transmissionEntry");
+//
+//            double specCenter, specLower, specUpper, datarate;
+//            specCenter = controlChannelOut->par("assignedSpectrumCenter");
+//            specLower = controlChannelOut->par("assignedSpectrumLowerBound");
+//            specUpper = controlChannelOut->par("assignedSpectrumUpperBound");
+//            datarate = controlChannelOut->par("datarate");
+//
+//            entry->setBitrate(datarate/1000000);//bps to mbps
+//            entry->setPower(ack->getSourcePower());
+//            entry->setSpectrumCenter(specCenter);
+//            entry->setSpectrumLowerBound(specLower);
+//            entry->setSpectrumUpperBound(specUpper);
+//            entry->setSender(position);
+//            entry->setStartTime(simTime());
+//            entry->setEndTime(simTime() + controlChannelOut->calculateDuration(ack) + controlChannelOut->getDelay());
+//
+//            ack->setTransmissionEntry(entry);
+//
+//            send(ack, controlChannelOutGate);
+//            sendDirect(entry, table, "entryIn");
+//        }
+
+//        if(!bcp->getHasSetupTransmitter() && !ret)
+//        {
+//            if(!controlChannelQueue.isEmpty())
+//            controlChannelQueue.insertBefore(controlChannelQueue.get(0),bcp);
+//            else controlChannelQueue.insert(bcp);
+//        }
+
+//bool no;
+//    if(bcp->getBurstifierId() == 32 && bcp->getNumSeq() == 7 && getFullPath().compare("Horn.fibre5.leftMux") == 0)
+//        no = true;
+
+//bool yeaboy;
+//   //
+//   //    if(center == 2350 && getFullPath().compare("Horn.fibre5.leftMux") == 0)
+//   //        yeaboy = true;
+//
+//   //    if(center == 2350 && simTime().dbl() > 1.5 && getFullPath().compare("Horn.fibre5.leftMux") == 0)
+//
+//   if(simTime().dbl() > 1.3 && getFullPath().compare("Horn.fibre5.leftMux") == 0)
+//       yeaboy = true;
+
+//bool no;
+//           if(reservations[i].burstifierId == 32 && reservations[i].numseq == 102 && getFullPath().compare("Horn.fibre5.leftMux") == 0)
+//               no = true;
+
+//timer->setTimerEnd(simTime() + timer->getMsgDuration() + bcp->getBurstOffset() - (sender?0:((bcp->getByteLength()*8)/controlChannelDatarate)));
+
+//SimTime time;
+//                   if(bcp->getBurstifierId() == 122 && bcp->getNumSeq() == 12008 && getFullPath().compare("Horn.fibre1.leftMux") == 0)
+//                       time = simTime();
+
+//SimTime time;
+//    if((timer->getBurstifierId() == 470 || timer->getBurstifierId() == 508) && (timer->getNumseq() == 246 || timer->getNumseq() == 215) && getFullPath().compare("NSFNET.fibre18.leftMux") == 0)
+//        time = simTime();
+
+//SimTime time;
+//    if(bcp->getBurstifierId() == 508 && bcp->getNumSeq() == 215 && getFullPath().compare("NSFNET.fibre18.rightMux") == 0)
+//        time = simTime();
+//
+//    if(bcp->getBurstifierId() == 470 && bcp->getNumSeq() == 246 && getFullPath().compare("NSFNET.fibre18.leftMux") == 0)
+//        time = simTime();
+
+//if(time.dbl() > 7 && getFullPath().compare("Horn.fibre1.leftMux") == 0)
+//                               time = simTime();

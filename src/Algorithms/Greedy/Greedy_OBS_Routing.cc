@@ -58,6 +58,7 @@ void Greedy_OBS_Routing::doGreedy(OBS_Burst *burst)
     simtime_t offset = calculateMinimumOffset(path);
     int gate = getLocalOutGate(path->getPath(0));
 
+    bcp->setBurstId(burst->getId());
     bcp->setDestAddr(destAddr);
     bcp->setSrcAddr(path->getSrcAddress());
     bcp->setBurstifierId(burst->getBurstifierId());
@@ -81,4 +82,5 @@ void Greedy_OBS_Routing::doGreedy(OBS_Burst *burst)
     sentBurst++;
     destVector.record(destAddr);
     emit(sentBurstId, true);
+    delete info;
 }

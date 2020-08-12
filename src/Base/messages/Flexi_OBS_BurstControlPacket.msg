@@ -33,6 +33,7 @@ packet TransmittedMessage_Base;
 
 packet Flexi_OBS_BurstControlPacket extends TransmittedMessage_Base
 {
+    long burstId;
     int srcAddr = -1;
     int destAddr = -1;   
     double assignedSpectrumCenter = -1; //Burst's assigned center

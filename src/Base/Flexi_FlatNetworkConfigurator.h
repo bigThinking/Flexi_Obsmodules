@@ -20,13 +20,13 @@
 #include <omnetpp.h>
 
 #include "inet/common/INETDefs.h"
-#include "inet/networklayer/contract/ipv4/IPv4Address.h"
+#include "inet/networklayer/contract/ipv4/Ipv4Address.h"
 #include "inet/networklayer/contract/IRoutingTable.h"
 #include "inet/networklayer/contract/IInterfaceTable.h"
 #include "inet/networklayer/common/InterfaceEntry.h"
-#include "inet/networklayer/ipv4/IPv4InterfaceData.h"
+#include "inet/networklayer/ipv4/Ipv4InterfaceData.h"
 #include "inet/networklayer/common/L3AddressResolver.h"
-#include "inet/networklayer/ipv4/IPv4Route.h"
+#include "inet/networklayer/ipv4/Ipv4Route.h"
 #include "Flexi_WeightedTopology.h"
 #include "K_ShortestPathTableEntry_m.h"
 #include "K_ShortestPathTable.h"
@@ -42,19 +42,20 @@ protected:
         bool isIPNode;
         IInterfaceTable *ift;
         IRoutingTable *rt;
-        IPv4Address address;
+        Ipv4Address address;
         bool usesDefaultRoute;
         bool ipForwardEnabled;
     };
     typedef std::vector<NodeInfo> NodeInfoVector;
 
-  protected:
+    std::ofstream* file;
     double startTime;
     int maxNumberOfShortestPaths;
     bool fillCoreNodeTables, fillIpTrafGenAddresses;
     virtual int numInitStages() const  {return 3;}
     virtual void initialize(int stage);
     virtual void handleMessage(cMessage *msg);
+    virtual void printGateNodes(Flexi_WeightedTopology& topo);
 
     virtual void extractTopology(cTopology& topo, NodeInfoVector& nodeInfo);
     virtual void assignAddresses(cTopology& topo, NodeInfoVector& nodeInfo);

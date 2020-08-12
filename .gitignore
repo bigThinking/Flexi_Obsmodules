@@ -20,3 +20,7 @@ src/Networks/Horn/.qtenvrc
 src/Networks/Horn/.cmdenv-log
 /INSTALL
 /flexi_obsmodules.exe
+/flexi_obsmodules_dbg.exe
+/libflexi_obsmodules_dbg.dll
+*.cmdenv-log
+*.qtenvrc

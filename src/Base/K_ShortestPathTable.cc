@@ -21,6 +21,7 @@ void K_ShortestPathTable::initialize()
 {
     take(&(this->table));
     this->table.setName("ShortestPathEntry");
+    recordTableEntries = par("recordTableEntries");
 }
 
 int K_ShortestPathTable::getDestCount(){return table.size();}
@@ -114,7 +115,7 @@ K_ShortestPathTableEntry* K_ShortestPathTable::getLongestAvailable(int value, bo
             cQueue *q = dynamic_cast<cQueue*>(table[i]);
             K_ShortestPathTableEntry *temp = check_and_cast<K_ShortestPathTableEntry *>(q->get(q->getLength()-1));
             if(temp->getDestAddress() == value)
-                 return temp;
+                return temp;
         }
     }else {
         cQueue *q = dynamic_cast<cQueue*>(table[value]);
@@ -131,4 +132,38 @@ int K_ShortestPathTable::comparator(cObject *obj1, cObject *obj2)
 
     return (o1->getCost() > o2->getCost()) ? 1 : (o1->getCost() == o2->getCost() ? 0 : -1);
     //todo make it also consider path node count, if path cost is the same
+}
+
+void K_ShortestPathTable::finish()
+{
+    if(recordTableEntries){
+        file = new std::ofstream();
+        file->open(getFullPath());
+
+        for(int i=0; i < table.size(); i++)//go through table
+        {
+            cQueue *q = dynamic_cast<cQueue*>(table[i]);
+
+            for(int j=0; j < q->getLength(); j++)//go through entries for each destination
+            {
+                K_ShortestPathTableEntry *temp = check_and_cast<K_ShortestPathTableEntry*>(q->get(j));
+                if(j==0)
+                {
+                    (*file)<< "==============================================================\n";
+                    (*file)<< temp->getDestAddress() << "\n";
+                    (*file)<< "==============================================================\n";
+                }
+
+                (*file)<< "||" << temp->getId() << "-->";
+                for(int k=0; k < temp->getPathArraySize(); k++)//print path for each route
+                {
+                    (*file)<< std::setprecision(16) <<  temp->getPath(k) << ">>";
+                }
+                (*file)<< "\n---------------------------------------------------------------\n";
+            }
+
+        }
+
+        file->close();
+    }
 }

@@ -35,8 +35,11 @@ class NodeRoutingTableEntry {
     int outputPort;
     
     pathPtr route;
-    int usedCounter = 0;
-    int failedCounter = 0;
-    int successCounter = 0;
+    double usedCounter = 0;
+    double failedCounter = 0;
+    double successCounter = 0;
     int numberOfCoreNodes = 0;
+    double burstLossRatio = 0;
+    double intermediateValue01 = 0;
+    double intermediateValue02 = 0;
 }

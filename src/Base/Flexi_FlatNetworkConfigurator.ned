@@ -15,11 +15,11 @@
 
 package flexi_obsmodules.src.Base;
 
-import inet.networklayer.configurator.ipv4.FlatNetworkConfigurator;
+import inet.networklayer.configurator.ipv4.Ipv4FlatNetworkConfigurator;
 //
 // TODO auto-generated module
 //
-simple Flexi_FlatNetworkConfigurator extends FlatNetworkConfigurator
+simple Flexi_FlatNetworkConfigurator extends Ipv4FlatNetworkConfigurator
 {
     parameters:
     int k = default(5); //maximum number of shortest paths to hold for each src-dest pair

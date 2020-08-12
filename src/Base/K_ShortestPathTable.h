@@ -18,6 +18,9 @@
 
 #include <omnetpp.h>
 #include "K_ShortestPathTableEntry_m.h"
+#include <fstream>
+#include <iostream>
+#include <iomanip>
 using namespace std;
 using namespace omnetpp;
 
@@ -35,8 +38,11 @@ class K_ShortestPathTable : public cSimpleModule
     virtual K_ShortestPathTableEntry* getLongestAvailable(int value, bool byDest=1);
   protected:
     cArray table;
+    std::ofstream* file;
+    bool recordTableEntries;
     virtual void initialize();
     static int comparator(cObject *obj1, cObject *obj2);
+    virtual void finish();
 };
 
 #endif

@@ -45,21 +45,9 @@ void Flexi_OBS_CoreControlLogic::initialize(int stage)
 
 void Flexi_OBS_CoreControlLogic::handleMessage(cMessage *msg)
 {
-    if(strstr(msg->getName(), "BcpAck") != NULL)
+    if(strcmp(msg->getName(), "setUpCoreNode") == 0)
     {
-        EndToEndAck *e = check_and_cast<EndToEndAck*>(msg);
-        K_ShortestPathTableEntry *route = e->getRoute();
-
-        //        int outGate = getOutputGate(route->getPath(route->getPathArraySize() + e->getRoutePos()));
-        int outGate = getOutputGate(route->getPath(e->getRoutePos()));
-
-        if(outGate > -1)
-        {
-            e->setRoutePos(e->getRoutePos()-2);
-            oxc->releaseOutLink(e->getNumSeq(), e->getBurstifierId());
-            oxc->setOutLink(e->getNumSeq(), e->getBurstifierId(), outGate);
-            sendDelayed(msg, processingDelay+conversionDelay, "outOXC");
-        }
+        ipAddr = msg->par("ipAddr");
     }
 }
 

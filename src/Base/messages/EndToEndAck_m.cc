@@ -1,5 +1,5 @@
 //
-// Generated file, do not edit! Created by nedtool 5.1 from src/Base/messages/EndToEndAck.msg.
+// Generated file, do not edit! Created by nedtool 5.4 from src/Base/messages/EndToEndAck.msg.
 //
 
 // Disable warnings about unused variables, empty switch stmts, etc:
@@ -195,6 +195,9 @@ EndToEndAck::EndToEndAck(const char *name, short kind) : ::TransmittedMessage_Ba
     this->shortestPathCost = 0;
     this->distTravelled = 0;
     this->nodeCounter = 0;
+    this->blrApprox = 1;
+    this->bcpLostOnRoute = 0;
+    this->totalBCPSentOnRoute = 0;
 }
 
 EndToEndAck::EndToEndAck(const EndToEndAck& other) : ::TransmittedMessage_Base(other)
@@ -234,6 +237,9 @@ void EndToEndAck::copy(const EndToEndAck& other)
     this->shortestPathCost = other.shortestPathCost;
     this->distTravelled = other.distTravelled;
     this->nodeCounter = other.nodeCounter;
+    this->blrApprox = other.blrApprox;
+    this->bcpLostOnRoute = other.bcpLostOnRoute;
+    this->totalBCPSentOnRoute = other.totalBCPSentOnRoute;
 }
 
 void EndToEndAck::parsimPack(omnetpp::cCommBuffer *b) const
@@ -251,6 +257,9 @@ void EndToEndAck::parsimPack(omnetpp::cCommBuffer *b) const
     doParsimPacking(b,this->shortestPathCost);
     doParsimPacking(b,this->distTravelled);
     doParsimPacking(b,this->nodeCounter);
+    doParsimPacking(b,this->blrApprox);
+    doParsimPacking(b,this->bcpLostOnRoute);
+    doParsimPacking(b,this->totalBCPSentOnRoute);
 }
 
 void EndToEndAck::parsimUnpack(omnetpp::cCommBuffer *b)
@@ -274,6 +283,9 @@ void EndToEndAck::parsimUnpack(omnetpp::cCommBuffer *b)
     doParsimUnpacking(b,this->shortestPathCost);
     doParsimUnpacking(b,this->distTravelled);
     doParsimUnpacking(b,this->nodeCounter);
+    doParsimUnpacking(b,this->blrApprox);
+    doParsimUnpacking(b,this->bcpLostOnRoute);
+    doParsimUnpacking(b,this->totalBCPSentOnRoute);
 }
 
 pathPtr& EndToEndAck::getRoute()
@@ -406,6 +418,36 @@ void EndToEndAck::setNodeCounter(int nodeCounter)
     this->nodeCounter = nodeCounter;
 }
 
+double EndToEndAck::getBlrApprox() const
+{
+    return this->blrApprox;
+}
+
+void EndToEndAck::setBlrApprox(double blrApprox)
+{
+    this->blrApprox = blrApprox;
+}
+
+int EndToEndAck::getBcpLostOnRoute() const
+{
+    return this->bcpLostOnRoute;
+}
+
+void EndToEndAck::setBcpLostOnRoute(int bcpLostOnRoute)
+{
+    this->bcpLostOnRoute = bcpLostOnRoute;
+}
+
+int EndToEndAck::getTotalBCPSentOnRoute() const
+{
+    return this->totalBCPSentOnRoute;
+}
+
+void EndToEndAck::setTotalBCPSentOnRoute(int totalBCPSentOnRoute)
+{
+    this->totalBCPSentOnRoute = totalBCPSentOnRoute;
+}
+
 class EndToEndAckDescriptor : public omnetpp::cClassDescriptor
 {
   private:
@@ -471,7 +513,7 @@ const char *EndToEndAckDescriptor::getProperty(const char *propertyname) const
 int EndToEndAckDescriptor::getFieldCount() const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
-    return basedesc ? 11+basedesc->getFieldCount() : 11;
+    return basedesc ? 14+basedesc->getFieldCount() : 14;
 }
 
 unsigned int EndToEndAckDescriptor::getFieldTypeFlags(int field) const
@@ -494,8 +536,11 @@ unsigned int EndToEndAckDescriptor::getFieldTypeFlags(int field) const
         FD_ISEDITABLE,
         FD_ISEDITABLE,
         FD_ISEDITABLE,
+        FD_ISEDITABLE,
+        FD_ISEDITABLE,
+        FD_ISEDITABLE,
     };
-    return (field>=0 && field<11) ? fieldTypeFlags[field] : 0;
+    return (field>=0 && field<14) ? fieldTypeFlags[field] : 0;
 }
 
 const char *EndToEndAckDescriptor::getFieldName(int field) const
@@ -518,8 +563,11 @@ const char *EndToEndAckDescriptor::getFieldName(int field) const
         "shortestPathCost",
         "distTravelled",
         "nodeCounter",
+        "blrApprox",
+        "bcpLostOnRoute",
+        "totalBCPSentOnRoute",
     };
-    return (field>=0 && field<11) ? fieldNames[field] : nullptr;
+    return (field>=0 && field<14) ? fieldNames[field] : nullptr;
 }
 
 int EndToEndAckDescriptor::findField(const char *fieldName) const
@@ -537,6 +585,9 @@ int EndToEndAckDescriptor::findField(const char *fieldName) const
     if (fieldName[0]=='s' && strcmp(fieldName, "shortestPathCost")==0) return base+8;
     if (fieldName[0]=='d' && strcmp(fieldName, "distTravelled")==0) return base+9;
     if (fieldName[0]=='n' && strcmp(fieldName, "nodeCounter")==0) return base+10;
+    if (fieldName[0]=='b' && strcmp(fieldName, "blrApprox")==0) return base+11;
+    if (fieldName[0]=='b' && strcmp(fieldName, "bcpLostOnRoute")==0) return base+12;
+    if (fieldName[0]=='t' && strcmp(fieldName, "totalBCPSentOnRoute")==0) return base+13;
     return basedesc ? basedesc->findField(fieldName) : -1;
 }
 
@@ -560,8 +611,11 @@ const char *EndToEndAckDescriptor::getFieldTypeString(int field) const
         "int",
         "int",
         "int",
+        "double",
+        "int",
+        "int",
     };
-    return (field>=0 && field<11) ? fieldTypeStrings[field] : nullptr;
+    return (field>=0 && field<14) ? fieldTypeStrings[field] : nullptr;
 }
 
 const char **EndToEndAckDescriptor::getFieldPropertyNames(int field) const
@@ -640,6 +694,9 @@ std::string EndToEndAckDescriptor::getFieldValueAsString(void *object, int field
         case 8: return long2string(pp->getShortestPathCost());
         case 9: return long2string(pp->getDistTravelled());
         case 10: return long2string(pp->getNodeCounter());
+        case 11: return double2string(pp->getBlrApprox());
+        case 12: return long2string(pp->getBcpLostOnRoute());
+        case 13: return long2string(pp->getTotalBCPSentOnRoute());
         default: return "";
     }
 }
@@ -664,6 +721,9 @@ bool EndToEndAckDescriptor::setFieldValueAsString(void *object, int field, int i
         case 8: pp->setShortestPathCost(string2long(value)); return true;
         case 9: pp->setDistTravelled(string2long(value)); return true;
         case 10: pp->setNodeCounter(string2long(value)); return true;
+        case 11: pp->setBlrApprox(string2double(value)); return true;
+        case 12: pp->setBcpLostOnRoute(string2long(value)); return true;
+        case 13: pp->setTotalBCPSentOnRoute(string2long(value)); return true;
         default: return false;
     }
 }

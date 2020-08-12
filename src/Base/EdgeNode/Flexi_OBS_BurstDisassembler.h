@@ -21,6 +21,7 @@
 #include "Flexi_OBS_Routing.h"
 #include "EndToEndAck_m.h"
 #include "Flexi_OBS_DisassemblerInfo_m.h"
+#include "Counter_m.h"
 
 using namespace std;
 using namespace omnetpp;
@@ -30,9 +31,10 @@ protected:
 
       /* Statistics */
       cOutVector bcpSources;
+      vector<Counter> sourceCounter;
       int recvBursts, recvBcps, recvControls, burstLostByImpairments, burstLost, pendingAcksSize; //!< Counters.
 
-      simsignal_t lostBurstId;
+      simsignal_t lostBurstId, lostBCPId;
       simsignal_t successfulBurstId;
       vector<EndToEndAck*> pendingAcks;
       Flexi_OBS_EdgeRoutingTable* table;

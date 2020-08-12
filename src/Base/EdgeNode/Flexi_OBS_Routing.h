@@ -33,6 +33,7 @@
 #include "NodeRoutingTableEntry_m.h"
 #include "EndToEndAck_m.h"
 #include "Flexi_OBS_DisassemblerInfo_m.h"
+#include "Counter_m.h"
 
 using namespace inet;
 using namespace std;
@@ -47,8 +48,11 @@ public:
 protected:
     cStdDev recvBurstSize; //!< Received burst' length statistics.
     cStdDev interArrivalTimes;
+    vector<Counter> destCounter, routeCounter;
     vector<double> datarates;
     vector<double> probabilities;
+    K_ShortestPathTable* shortestPathTable;
+    Flexi_OBS_EdgeRoutingTable* routingTable;
 
     simtime_t lastBurst_t;
     simsignal_t sentBurstId;
@@ -62,12 +66,14 @@ protected:
     virtual int numInitStages() const  {return 4;}
     virtual void handleMessage(cMessage *msg);
     virtual InterfaceEntry* registerInterface ();
-    //Flexi_OBS_BurstControlPacket* generateBCP(OBS_Burst *burst);
+    Flexi_OBS_BurstControlPacket* generateBCP(OBS_Burst *burst);
+    void collectData(OBS_Burst *burst, Flexi_OBS_BurstControlPacket* bcp);
     Flexi_OBS_EdgeRoutingTable* getTable();
     virtual K_ShortestPathTable* getShortestPathTable();
     simtime_t calculateMinimumOffset(K_ShortestPathTableEntry* path);
     virtual double getDatarate();
     void finish();
+
 };
 
 #endif

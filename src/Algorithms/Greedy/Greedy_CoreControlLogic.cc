@@ -19,6 +19,8 @@ Define_Module(Greedy_CoreControlLogic);
 
 void Greedy_CoreControlLogic::handleMessage(cMessage *msg)
 {
+    Flexi_OBS_CoreControlLogic::handleMessage(msg);
+
     if(strcmp(msg->getName(), "BCP") ==0){
         Flexi_OBS_BurstControlPacket *bcp = check_and_cast<Flexi_OBS_BurstControlPacket *>(msg);
 
@@ -30,7 +32,7 @@ void Greedy_CoreControlLogic::handleMessage(cMessage *msg)
             if(outGate > -1)
             {
                 bcp->setRoutePos(bcp->getRoutePos()+2);
-                oxc->setOutLink(bcp->getNumSeq(), bcp->getBurstifierId(), outGate);
+                oxc->setOutLink(bcp->getBurstId(), bcp->getNumSeq(), bcp->getBurstifierId(), outGate);
 
                 bcp->setBurstOffset(bcp->getBurstOffset() - (processingDelay+conversionDelay));
 
@@ -41,9 +43,9 @@ void Greedy_CoreControlLogic::handleMessage(cMessage *msg)
             EV << "Could not route bcp numseq:" << to_string(bcp->getNumSeq()) << " burstifierId: " << to_string(bcp->getBurstifierId());
             delete(msg);
         }else
-            {
-               emit(lostBCPId, 4);
-               delete(msg);
-            }
+        {
+            emit(lostBCPId, 4);
+            delete(msg);
+        }
     }
 }

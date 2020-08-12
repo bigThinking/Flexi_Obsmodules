@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<scave:Analysis xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:scave="http://www.omnetpp.org/omnetpp/scave">
+  <inputs>
+    <inputs name="/flexi_obsmodules/src/Networks/TestNetwork/results/FSAC-*.vec"/>
+    <inputs name="/flexi_obsmodules/src/Networks/TestNetwork/results/FSAC-*.sca"/>
+    <inputs name="/flexi_obsmodules/src/Networks/TestNetwork/results/Greedy-0.sca"/>
+    <inputs name="/flexi_obsmodules/src/Networks/TestNetwork/results/Greedy-0.vec"/>
+  </inputs>
+  <datasets>
+    <datasets name="FSAC">
+      <items xsi:type="scave:Add" filterPattern="file(/flexi_obsmodules/src/Networks/TestNetwork/results/FSAC-0.sca) AND attr:configname(FSAC) AND attr:runnumber(0) AND module(TestNetwork.flexi_OBS_EdgeNode1.obs.disassembler) AND name(&quot;received Bursts&quot;)"/>
+      <items xsi:type="scave:Add" filterPattern="file(/flexi_obsmodules/src/Networks/TestNetwork/results/FSAC-0.sca) AND attr:configname(FSAC) AND attr:runnumber(0) AND module(TestNetwork.flexi_OBS_EdgeNode.obs.disassembler) AND name(&quot;received Bursts&quot;)"/>
+      <items xsi:type="scave:Add" filterPattern="file(/flexi_obsmodules/src/Networks/TestNetwork/results/FSAC-0.sca) AND attr:configname(FSAC) AND attr:runnumber(0) AND module(TestNetwork.flexi_OBS_EdgeNode.obs.disassembler) AND name(&quot;recieved BCP&quot;)"/>
+      <items xsi:type="scave:Add" filterPattern="file(/flexi_obsmodules/src/Networks/TestNetwork/results/FSAC-0.sca) AND attr:configname(FSAC) AND attr:runnumber(0) AND module(TestNetwork.flexi_OBS_EdgeNode1.obs.disassembler) AND name(&quot;recieved BCP&quot;)"/>
+      <items xsi:type="scave:Add" filterPattern="file(/flexi_obsmodules/src/Networks/TestNetwork/results/FSAC-0.sca) AND attr:configname(FSAC) AND attr:runnumber(0) AND module(TestNetwork.flexi_OBS_EdgeNode.obs.disassembler) AND name(&quot;recieved control messages&quot;)"/>
+      <items xsi:type="scave:Add" filterPattern="file(/flexi_obsmodules/src/Networks/TestNetwork/results/FSAC-0.sca) AND attr:configname(FSAC) AND attr:runnumber(0) AND module(TestNetwork.flexi_OBS_EdgeNode1.obs.disassembler) AND name(&quot;recieved control messages&quot;)"/>
+      <items xsi:type="scave:Add" filterPattern="file(/flexi_obsmodules/src/Networks/TestNetwork/results/FSAC-0.sca) AND attr:configname(FSAC) AND attr:runnumber(0) AND module(TestNetwork.flexi_OBS_EdgeNode.obs.assembler.router) AND name(&quot;Burst sent by source&quot;)"/>
+      <items xsi:type="scave:Add" filterPattern="file(/flexi_obsmodules/src/Networks/TestNetwork/results/FSAC-0.sca) AND attr:configname(FSAC) AND attr:runnumber(0) AND module(TestNetwork.flexi_OBS_EdgeNode1.obs.assembler.router) AND name(&quot;Burst sent by source&quot;)"/>
+      <items xsi:type="scave:ComputeScalar" scalarName="successful burst" valueExpr="sum('received Bursts')" moduleExpr="TestNetwork" groupByExpr=""/>
+      <items xsi:type="scave:ComputeScalar" scalarName="total burst sent" valueExpr="sum('Burst sent by source')" moduleExpr="TestNetwork" groupByExpr=""/>
+      <items xsi:type="scave:ComputeScalar" scalarName="percent success" valueExpr="'successful burst'/'total burst sent'" moduleExpr="TestNetwork" groupByExpr=""/>
+      <items xsi:type="scave:BarChart" name="results">
+        <properties name="Graph.Title" value="dfdgf"/>
+      </items>
+    </datasets>
+  </datasets>
+  <chartSheets>
+    <chartSheets name="default" charts="//@datasets/@datasets.0/@items.11"/>
+  </chartSheets>
+</scave:Analysis>

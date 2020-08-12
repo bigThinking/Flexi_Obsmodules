@@ -25,6 +25,7 @@ Flexi_OBS_BurstDisassembler::~Flexi_OBS_BurstDisassembler(){
 void Flexi_OBS_BurstDisassembler::initialize(int stage){
     if(stage == 0){
         lostBurstId = registerSignal("lostBurst");
+        lostBCPId = registerSignal("lostBCP");
         successfulBurstId = registerSignal("successfulBurst");
 
         endToEndAckEnabled = par("endToEndAckEnabled");
@@ -35,7 +36,7 @@ void Flexi_OBS_BurstDisassembler::initialize(int stage){
         if(endToEndAckEnabled)
         {
             cleanPendingAckTimer = new cMessage("pendingAckCleaner");
-            scheduleAt(simTime()+5, cleanPendingAckTimer);
+            scheduleAt(simTime()+10, cleanPendingAckTimer);
         }
 
         recvBursts = 0;
@@ -51,6 +52,7 @@ void Flexi_OBS_BurstDisassembler::initialize(int stage){
         WATCH(burstLost);
         WATCH(burstLostByImpairments);
         WATCH(pendingAcksSize);
+        WATCH_VECTOR(pendingAcks);
         table = check_and_cast<Flexi_OBS_EdgeRoutingTable*>(getParentModule()->getSubmodule("EdgeRoutingTable"));
     }
 
@@ -67,7 +69,7 @@ void Flexi_OBS_BurstDisassembler::handleMessage(cMessage *msg){
             int last = 0;
             for(int i = 0; i < pendingAcks.size(); i++){
                 EndToEndAck* ack = check_and_cast<EndToEndAck*>(pendingAcks[i]);
-                if((simTime() - ack->getCreationTime()).dbl()  > 2)
+                if((simTime() - ack->getCreationTime())  > 4)
                     last = i+1;
                 else break;
             }
@@ -75,14 +77,14 @@ void Flexi_OBS_BurstDisassembler::handleMessage(cMessage *msg){
             if(last > 0){
                 for(int i=0; i < last; i++)
                 {
-                    EndToEndAck* e = pendingAcks[0];
+                    EndToEndAck* e = pendingAcks[i];
                     delete e;
-                    pendingAcks.erase(pendingAcks.begin());
                 }
+                pendingAcks.erase(pendingAcks.begin(), pendingAcks.begin()+last);
                 pendingAcksSize = pendingAcks.size();
             }
 
-            scheduleAt(simTime()+5, cleanPendingAckTimer);
+            scheduleAt(simTime()+10, cleanPendingAckTimer);
         }
 
         return;
@@ -97,8 +99,33 @@ void Flexi_OBS_BurstDisassembler::handleMessage(cMessage *msg){
         if(doOnBCPArrival(bcp, info)) return;
         recvControls++;
         recvBcps++;
-        bcpSources.record(bcp->getSrcAddr());
+        int srcAddr = bcp->getSrcAddr();
+        bcpSources.record(srcAddr);
         addPendingAck(bcp, info);
+
+        int pos = -1;
+        bool found =  false;
+        string src = std::to_string(srcAddr);
+        for(Counter obj : sourceCounter)
+        {
+            pos++;
+            if(strcmp(obj.description.c_str(), src.c_str()) == 0)
+            {
+                found = true;
+                break;
+            }
+        }
+
+        if(pos > -1 && found)
+            sourceCounter[pos].count++;
+        else
+        {
+            Counter counter;
+            counter.description = src;
+            counter.count = 1;
+            sourceCounter.push_back(counter);
+        }
+
         delete msg;
         return;
     }
@@ -112,11 +139,13 @@ void Flexi_OBS_BurstDisassembler::handleMessage(cMessage *msg){
             recvBursts++;
             emit(successfulBurstId, true);
             sendPendingAck(burst, true);
+            delete info;
         }else{
             burstLostByImpairments++;
             burstLost++;
             emit(lostBurstId, 3);
             sendPendingAck(burst, false);
+            delete info;
         }
 
         delete msg;
@@ -132,6 +161,11 @@ void Flexi_OBS_BurstDisassembler::finish(){
     recordScalar("received Bursts",recvBursts);
     recordScalar("received BCP", recvBcps);
     recordScalar("received control messages", recvControls);
+
+    for(Counter obj : sourceCounter)
+    {
+        recordScalar(("source:" + obj.description.str()).c_str(), obj.count);
+    }
 
 }
 

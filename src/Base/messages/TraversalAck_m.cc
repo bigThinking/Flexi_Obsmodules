@@ -1,5 +1,5 @@
 //
-// Generated file, do not edit! Created by nedtool 5.1 from src/Base/messages/TraversalAck.msg.
+// Generated file, do not edit! Created by nedtool 5.4 from src/Base/messages/TraversalAck.msg.
 //
 
 // Disable warnings about unused variables, empty switch stmts, etc:

@@ -24,7 +24,23 @@ void Flexi_OBS_CoreRoutingTable::initialize()
 
 void Flexi_OBS_CoreRoutingTable::addEntry(NodeRoutingTableEntry *entry)
 {
-
+//    int destAddr = entry->getDestination();
+//
+//    for(int i=0; i < tableEntries.size(); i++)
+//    {
+//        cQueue *q = dynamic_cast<cQueue*>(tableEntries[i]);
+//        NodeRoutingTableEntry *temp = check_and_cast<NodeRoutingTableEntry *>(q->front());
+//        if(temp->getDestination() == destAddr){
+//            entry->setEntry_Id(++entryCounter);
+//            q->insert(entry);
+//            return;
+//        }
+//    }
+//
+//    cQueue *paths = new cQueue(NULL, entryComparator);//compare function
+//    entry->setEntry_Id(++entryCounter);
+//    paths->insert(entry);
+//    tableEntries.add(paths);
 }
 
 cArray* Flexi_OBS_CoreRoutingTable::getEntries()
@@ -48,6 +64,14 @@ cQueue* Flexi_OBS_CoreRoutingTable::getDestEntries(int value, bool byDest)
     }
 
     return NULL;
+}
+
+int Flexi_OBS_CoreRoutingTable::entryComparator(cObject *obj1, cObject *obj2)
+{
+    NodeRoutingTableEntry *o1 = check_and_cast<NodeRoutingTableEntry *>(obj1);
+    NodeRoutingTableEntry *o2 = check_and_cast<NodeRoutingTableEntry *>(obj2);
+
+    return (o1->getPheromoneConc() > o2->getPheromoneConc()) ? 1 : (o1->getPheromoneConc() == o2->getPheromoneConc() ? 0 : -1);
 }
 
 void Flexi_OBS_CoreRoutingTable::handleMessage(cMessage *msg)

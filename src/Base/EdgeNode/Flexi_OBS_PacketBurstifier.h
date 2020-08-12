@@ -17,12 +17,12 @@
 #define __OBSMODULES_FLEXI_OBS_PACKETBURSTIFIER_H_
 
 #include <omnetpp.h>
-#include "inet/networklayer/ipv4/IPv4Datagram.h"
-#include "inet/networklayer/contract/INetworkProtocolControlInfo.h"
 #include "OBS_Burst.h"
 #include "OBS_BurstifierInfo_m.h"
 #include "QueueAssignment.h"
 #include "Flexi_OBS_PacketDispatcher.h"
+#include "inet/networklayer/common/L3Address.h"
+#include "inet/networklayer/common/L3AddressTag_m.h"
 
 using namespace inet;
 /**
