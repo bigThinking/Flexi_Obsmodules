@@ -92,7 +92,7 @@ private:
     vector< vector<double> > calculateWeightedMultipleShortestPathsBetween(
             Node *srcNode, Node *destNode, int maxRoutesPerNode, int srcAddr, int destAddr);
 
-    vector< vector<double> > YensKShortestPathAlg(int srcNodePos, int destNodePos,
+    vector< vector<Node*> > YensKShortestPathAlg(int srcNodePos, int destNodePos,
             int maxRoutesPerNode, int srcAddr, int destAddr);
 
     virtual void extractFromNetwork(bool (*selfunc)(cModule *,void *), void *userdata=nullptr);

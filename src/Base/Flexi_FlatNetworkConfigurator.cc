@@ -278,9 +278,37 @@ void Flexi_FlatNetworkConfigurator::fillShortestPathRoutingTables(cTopology& _to
 
                 // calculate shortest paths from srcNode to destNode
                 //           vector< vector<double> > paths = topo.calculateWeightedMultipleShortestPathsBetween(srcNode, destNode, maxNumberOfShortestPaths, srcAddr.getInt(), destAddr.getInt());
-                vector< vector<double> > paths = topo.YensKShortestPathAlg(i, j, maxNumberOfShortestPaths, 0, destAddr.getInt());
-
+                vector<vector<Node*>> paths = topo.YensKShortestPathAlg(i, j, maxNumberOfShortestPaths, 0, destAddr.getInt());
                 K_ShortestPathTable *table = check_and_cast<K_ShortestPathTable *>(topo.getNode(i)->getModule()->getSubmodule("k_ShortestPathTable"));
+
+                //output A
+                for(int i = 0; i < A.size(); i++)//for each path in A
+                {
+                    vector<Node*> pathNodes = A[i];
+                    int pathSize = pathNodes.size()-1;
+                    int vectorSize = 2*pathSize + 3;
+                    vector<double> path(vectorSize); //special indexes 0:srcAddr, n-1:destAddr, n:cost
+                    path[0]= srcAddr;
+                    path[vectorSize-2] = destAddr;
+                    path[vectorSize-1] = aSize[i];
+                    int pathPos = 0;
+
+                    for(int j =0; j < pathNodes.size()-1; j++)//for each node in pathNodes
+                    {
+                        Node* node = pathNodes[j];
+                        for(int k = 0; k < node->getNumOutLinks(); k++)//for each outlink in node
+                        {
+                            if(node->getLinkOut(k)->getRemoteNode() == pathNodes[j+1])
+                            {
+                                path[++pathPos] = node->getLinkOut(k)->getLocalGateId();
+                                path[++pathPos] = node->getLinkOut(k)->getRemoteGateId();
+                            }
+                        }
+                    }
+
+                    shortestPaths.push_back(path);
+                }
+                return shortestPaths;
 
                 for(int j = 0; j < paths.size(); j++)
                 {

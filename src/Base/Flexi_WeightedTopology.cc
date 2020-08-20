@@ -78,7 +78,7 @@ void Flexi_WeightedTopology::calculateWeightedSingleShortestPathsTo(Node *_targe
     }
 }
 
-vector< vector<double> > Flexi_WeightedTopology::YensKShortestPathAlg(int srcNodePos, int destNodePos,
+vector< vector<Node*> > Flexi_WeightedTopology::YensKShortestPathAlg(int srcNodePos, int destNodePos,
         int maxRoutesPerNode, int srcAddr, int destAddr)
 {
     calculateWeightedSingleShortestPathsTo(this->getNode(destNodePos));
@@ -204,34 +204,7 @@ vector< vector<double> > Flexi_WeightedTopology::YensKShortestPathAlg(int srcNod
         bSize.erase(bSize.begin());
     }
 
-    //output A
-    for(int i = 0; i < A.size(); i++)//for each path in A
-    {
-        vector<Node*> pathNodes = A[i];
-        int pathSize = pathNodes.size()-1;
-        int vectorSize = 2*pathSize + 3;
-        vector<double> path(vectorSize); //special indexes 0:srcAddr, n-1:destAddr, n:cost
-        path[0]= srcAddr;
-        path[vectorSize-2] = destAddr;
-        path[vectorSize-1] = aSize[i];
-        int pathPos = 0;
-
-        for(int j =0; j < pathNodes.size()-1; j++)//for each node in pathNodes
-        {
-            Node* node = pathNodes[j];
-            for(int k = 0; k < node->getNumOutLinks(); k++)//for each outlink in node
-            {
-                if(node->getLinkOut(k)->getRemoteNode() == pathNodes[j+1])
-                {
-                    path[++pathPos] = node->getLinkOut(k)->getLocalGateId();
-                    path[++pathPos] = node->getLinkOut(k)->getRemoteGateId();
-                }
-            }
-        }
-
-        shortestPaths.push_back(path);
-    }
-    return shortestPaths;
+    return A;
 }
 
 vector< vector<double> > Flexi_WeightedTopology::calculateWeightedMultipleShortestPathsBetween(Node *srcNode, Node *destNode, int maxRoutesPerNode, int srcAddr, int destAddr)

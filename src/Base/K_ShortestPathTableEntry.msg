@@ -18,5 +18,6 @@ class K_ShortestPathTableEntry
     int srcAddress;
     int destAddress;
     double cost;
-    double path[];    
+    double path[];
+    string pathNodes[];  
 }
