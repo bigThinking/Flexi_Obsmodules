@@ -173,7 +173,7 @@ void Flexi_FlatNetworkConfigurator::addDefaultRoutes(cTopology& topo, NodeInfoVe
 void Flexi_FlatNetworkConfigurator::fillShortestPathRoutingTables(cTopology& _topo, NodeInfoVector& nodeInfo)
 {
     Flexi_WeightedTopology &topo = (Flexi_WeightedTopology &)_topo;
-    vector< vector<double> > routes;
+    vector<Flexi_WeightedTopology::Path*> routes;
 
     // fill in routing tables with shortest paths
     for (int i=0; i<topo.getNumNodes(); i++)
@@ -200,10 +200,9 @@ void Flexi_FlatNetworkConfigurator::fillShortestPathRoutingTables(cTopology& _to
             std::string destModName = destNode->getModule()->getFullName();
 
             // calculate shortest paths from srcNode to destNode
-            //           vector< vector<double> > paths = topo.calculateWeightedMultipleShortestPathsBetween(srcNode, destNode, maxNumberOfShortestPaths, srcAddr.getInt(), destAddr.getInt());
-            vector< vector<double> > paths = topo.YensKShortestPathAlg(i, j, maxNumberOfShortestPaths, srcAddr.getInt(), destAddr.getInt());
-            for(int k=0; k < paths.size(); k++)
-                routes.push_back(paths[k]);
+            vector<Flexi_WeightedTopology::Path*> A  = topo.YensKShortestPathAlg(i, j, maxNumberOfShortestPaths, srcAddr.getInt(), destAddr.getInt());
+            for(int k=0; k < A.size(); k++)
+                routes.push_back(A[k]);
         }
     }
 
@@ -217,32 +216,45 @@ void Flexi_FlatNetworkConfigurator::fillShortestPathRoutingTables(cTopology& _to
 
         for(int j = 0; j < routes.size(); j++)
         {
-            vector<double> path = routes[j];
-            K_ShortestPathTableEntry *entry = new K_ShortestPathTableEntry();
 
-            entry->setCost(path[path.size()-1]);
-            entry->setSrcAddress(addr);
-            entry->setPathArraySize(path.size()-3);
-            int counter = 0;
-
-            if(path[0] == addr)//addr is src
+            Flexi_WeightedTopology::Path* path = routes[j];
+            if(path->srcAddr == addr)//addr is src
             {
-                entry->setDestAddress(path[path.size()-2]);
-               // entry->setId((std::to_string(addr) + "-" + std::to_string(intrand(1000))).c_str());
+                K_ShortestPathTableEntry *entry = new K_ShortestPathTableEntry();
                 entry->setId((std::to_string(addr) + "-" + std::to_string(j)).c_str());
+                entry->setSrcAddress(addr);
+                entry->setDestAddress(path->destAddr);
+                entry->setCost(path->Cost);
+                entry->setPathArraySize(path->pathGates.size());
+                entry->setPathNodesArraySize(path->orderedNodes.size());
 
-                for(int k = 1; k < path.size()-2; k++)
-                    entry->setPath(counter++, path[k]);
+                int counter = 0;
+                for(int k = 0; k < path->pathGates.size(); k++)
+                    entry->setPath(counter++, path->pathGates[k]);
+
+                counter = 0;
+                for(int k = 0; k < path->orderedNodes.size(); k++)
+                    entry->setPathNodes(counter++, path->orderedNodes[k]->getModule()->getFullName());
 
                 table->addEntry(entry);
 
-            }else if(path[path.size()-2] == addr)//addr is dest
+            }else if(path->destAddr == addr)//addr is dest
             {
-                entry->setDestAddress(path[0]);
+                K_ShortestPathTableEntry *entry = new K_ShortestPathTableEntry();
                 entry->setId((std::to_string(addr) + "-" + std::to_string(j)).c_str());
+                entry->setSrcAddress(addr);
+                entry->setDestAddress(path->srcAddr);
+                entry->setCost(path->Cost);
+                entry->setPathArraySize(path->pathGates.size());
+                entry->setPathNodesArraySize(path->orderedNodes.size());
 
-                for(int k = path.size()-3; k > 0; k--)
-                    entry->setPath(counter++, path[k]);
+                int counter = 0;
+                for(int k = path->pathGates.size()-1; k >= 0; k--)
+                    entry->setPath(counter++,  path->pathGates[k]);
+
+                counter = 0;
+                for(int k = path->orderedNodes.size()-1; k >= 0; k--)
+                   entry->setPathNodes(counter++,  path->orderedNodes[k]->getModule()->getFullName());
 
                 table->addEntry(entry);
             }
@@ -277,52 +289,26 @@ void Flexi_FlatNetworkConfigurator::fillShortestPathRoutingTables(cTopology& _to
                     continue;
 
                 // calculate shortest paths from srcNode to destNode
-                //           vector< vector<double> > paths = topo.calculateWeightedMultipleShortestPathsBetween(srcNode, destNode, maxNumberOfShortestPaths, srcAddr.getInt(), destAddr.getInt());
-                vector<vector<Node*>> paths = topo.YensKShortestPathAlg(i, j, maxNumberOfShortestPaths, 0, destAddr.getInt());
+                vector<Flexi_WeightedTopology::Path*> A = topo.YensKShortestPathAlg(i, j, maxNumberOfShortestPaths, 0, destAddr.getInt());
                 K_ShortestPathTable *table = check_and_cast<K_ShortestPathTable *>(topo.getNode(i)->getModule()->getSubmodule("k_ShortestPathTable"));
 
                 //output A
-                for(int i = 0; i < A.size(); i++)//for each path in A
+                for(int k = 0; k < A.size(); k++)//for each path in A
                 {
-                    vector<Node*> pathNodes = A[i];
-                    int pathSize = pathNodes.size()-1;
-                    int vectorSize = 2*pathSize + 3;
-                    vector<double> path(vectorSize); //special indexes 0:srcAddr, n-1:destAddr, n:cost
-                    path[0]= srcAddr;
-                    path[vectorSize-2] = destAddr;
-                    path[vectorSize-1] = aSize[i];
-                    int pathPos = 0;
-
-                    for(int j =0; j < pathNodes.size()-1; j++)//for each node in pathNodes
-                    {
-                        Node* node = pathNodes[j];
-                        for(int k = 0; k < node->getNumOutLinks(); k++)//for each outlink in node
-                        {
-                            if(node->getLinkOut(k)->getRemoteNode() == pathNodes[j+1])
-                            {
-                                path[++pathPos] = node->getLinkOut(k)->getLocalGateId();
-                                path[++pathPos] = node->getLinkOut(k)->getRemoteGateId();
-                            }
-                        }
-                    }
-
-                    shortestPaths.push_back(path);
-                }
-                return shortestPaths;
-
-                for(int j = 0; j < paths.size(); j++)
-                {
-                    vector<double> path = paths[j];
                     K_ShortestPathTableEntry *entry = new K_ShortestPathTableEntry();
-
-                    entry->setCost(path[path.size()-1]);
-                    entry->setSrcAddress(path[0]);
-                    entry->setDestAddress(path[path.size()-2]);
-                    entry->setPathArraySize(path.size()-3);
+                    entry->setSrcAddress(0);
+                    entry->setDestAddress(destAddr.getInt());
+                    entry->setCost(A[k]->Cost);
+                    entry->setPathArraySize(A[k]->pathGates.size());
+                    entry->setPathNodesArraySize(A[k]->orderedNodes.size());
 
                     int counter = 0;
-                    for(int k = 1; k < path.size()-2; k++)
-                        entry->setPath(counter++, path[k]);
+                    for(int l = A[k]->pathGates.size()-1; l >= 0; l--)
+                       entry->setPath(counter++,  A[k]->pathGates[l]);
+
+                    counter = 0;
+                    for(int l = A[k]->orderedNodes.size()-1; l >= 0; l--)
+                        entry->setPathNodes(counter++,  A[k]->orderedNodes[l]->getModule()->getFullName());
 
                     table->addEntry(entry);
                 }
@@ -423,3 +409,54 @@ void Flexi_FlatNetworkConfigurator::fillRoutingTables(cTopology& _topo, NodeInfo
         }
     }
 }
+
+//for(int j=0; j<topo.getNumNodes(); j++)
+//           {
+//               if (!nodeInfo[j].isIPNode)
+//                   continue;
+//
+//               cTopology::Node *destNode = topo.getNode(j);
+//               Ipv4Address destAddr = nodeInfo[j].address;
+//               std::string destModName = destNode->getModule()->getFullName();
+//
+//               if(destNode->getNumInLinks() == 0)
+//                   continue;
+//
+//               // calculate shortest paths from srcNode to destNode
+//               vector<Flexi_WeightedTopology::Path*> A = topo.YensKShortestPathAlg(i, j, maxNumberOfShortestPaths, 0, destAddr.getInt());
+//               K_ShortestPathTable *table = check_and_cast<K_ShortestPathTable *>(topo.getNode(i)->getModule()->getSubmodule("k_ShortestPathTable"));
+//
+//               vector<vector<double>> paths;
+//               //output A
+//               for(int k = 0; k < A.size(); k++)//for each path in A
+//               {
+//                   vector<cTopology::Node*> pathNodes = A[i]->orderedNodes;
+//
+//                   K_ShortestPathTableEntry *entry = new K_ShortestPathTableEntry();
+//                   entry->setSrcAddress(0);
+//                   entry->setDestAddress(destAddr.getInt());
+//
+//                   entry->setCost(A[i]->Cost);
+//                   int pathPos = 0;
+//
+//                   entry->setPathNodesArraySize(pathNodes.size());
+//
+//                   for(int j =0; j < pathNodes.size()-1; j++)//for each node in pathNodes
+//                   {
+//                       entry->setPathArraySize(pathNodes.size()*2);
+//                       cTopology::Node* node = pathNodes[j];
+//                       for(int k = 0; k < node->getNumOutLinks(); k++)//for each outlink in node
+//                       {
+//                           if(node->getLinkOut(k)->getRemoteNode() == pathNodes[j+1])
+//                           {
+//                               entry->setPath(pathPos++, node->getLinkOut(k)->getLocalGateId());
+//                               entry->setPath(pathPos++, node->getLinkOut(k)->getRemoteGateId());
+//                           }
+//                       }
+//
+//                       entry->setPathNodes(j, node->getModule()->getFullName());
+//                   }
+//
+//                   table->addEntry(entry);
+//               }
+//           }

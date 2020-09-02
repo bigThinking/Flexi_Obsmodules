@@ -78,17 +78,16 @@ void Flexi_WeightedTopology::calculateWeightedSingleShortestPathsTo(Node *_targe
     }
 }
 
-vector< vector<Node*> > Flexi_WeightedTopology::YensKShortestPathAlg(int srcNodePos, int destNodePos,
+vector<Flexi_WeightedTopology::Path*> Flexi_WeightedTopology::YensKShortestPathAlg(int srcNodePos, int destNodePos,
         int maxRoutesPerNode, int srcAddr, int destAddr)
 {
     calculateWeightedSingleShortestPathsTo(this->getNode(destNodePos));
 
-    std::vector<vector<Node*>> A;
+    std::vector<Path*> A;
     std::vector<vector<Node*>> B;
     vector<double> bSize;
     vector<double> aSize;
     std::vector<Node*> shortestPath;
-    vector< vector<double> > shortestPaths;
     vector<WNode*> removedNodes;
     vector<WLink*> removedLinks;
 
@@ -103,26 +102,28 @@ vector< vector<Node*> > Flexi_WeightedTopology::YensKShortestPathAlg(int srcNode
     }
 
     if(shortestPath.size() == 0)
+    {
+        vector<Flexi_WeightedTopology::Path*> shortestPaths;
         return shortestPaths;
+    }
 
-    aSize.push_back(cost);
-
-    A.push_back(shortestPath);
+    Path* p = new Path(shortestPath, cost);
+    A.push_back(p);
 
     for(int k = 1; k < maxRoutesPerNode; k++)
     {
-        for(int i = 1; i <= A[k-1].size()-1; i++)
+        for(int i = 1; i <= A[k-1]->orderedNodes.size()-1; i++)
         {
-            Node* spurNode = A[k-1].at(i-1);
-            std::vector<Node*> rootPath(A[k-1].begin(), A[k-1].begin()+i);
+            Node* spurNode = A[k-1]->orderedNodes.at(i-1);
+            std::vector<Node*> rootPath(A[k-1]->orderedNodes.begin(), A[k-1]->orderedNodes.begin()+i);
             std::vector<Node*> spurPath;
             std::vector<Node*> totalPath;
 
             for(int j = 0; j < A.size(); j++)
             {
-                if(hasEqualPath(A[j], rootPath))
+                if(hasEqualPath(A[j]->orderedNodes, rootPath))
                 {
-                    WLink* link = ((WNode*)A[j].at(rootPath.size()-1))->getLinkTo((WNode*)A[j].at(rootPath.size()));
+                    WLink* link = ((WNode*)A[j]->orderedNodes.at(rootPath.size()-1))->getLinkTo((WNode*)A[j]->orderedNodes.at(rootPath.size()));
                     link->removed = true;
                     removedLinks.push_back(link);
                 }
@@ -198,8 +199,8 @@ vector< vector<Node*> > Flexi_WeightedTopology::YensKShortestPathAlg(int srcNode
         if(B.empty())
             break;
 
-        A.push_back(B[0]);
-        aSize.push_back(bSize[0]);
+        p = new Path(B[0], bSize[0]);
+        A.push_back(p);
         B.erase(B.begin());
         bSize.erase(bSize.begin());
     }

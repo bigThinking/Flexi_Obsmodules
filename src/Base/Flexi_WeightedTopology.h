@@ -77,6 +77,37 @@ private:
     };
 
     public:
+    class Path
+        {
+            friend class Flexi_WeightedTopology;
+
+        public:
+            Path(vector<Node*> path, double cost){
+                orderedNodes = path;
+                Cost = cost;
+
+                pathGates.resize(2*orderedNodes.size());
+                int pathPos = 0;
+
+                for(int j =0; j < orderedNodes.size()-1; j++)//for each node in pathNodes
+                {
+                    Node* node = orderedNodes[j];
+                    for(int k = 0; k < node->getNumOutLinks(); k++)//for each outlink in node
+                    {
+                       if(node->getLinkOut(k)->getRemoteNode() == orderedNodes[j+1])
+                         {
+                           pathGates[++pathPos] = node->getLinkOut(k)->getLocalGateId();
+                           pathGates[++pathPos] = node->getLinkOut(k)->getRemoteGateId();
+                         }
+                    }
+                 }
+            }
+            vector<Node*> orderedNodes;
+            vector<double> pathGates;
+            double Cost;
+            int srcAddr, destAddr;
+        };
+
     /**
      * Constructor.
      */
@@ -89,10 +120,10 @@ private:
      */
     void calculateWeightedSingleShortestPathsTo(Node *target);
 
-    vector< vector<double> > calculateWeightedMultipleShortestPathsBetween(
+    vector<vector<double>> calculateWeightedMultipleShortestPathsBetween(
             Node *srcNode, Node *destNode, int maxRoutesPerNode, int srcAddr, int destAddr);
 
-    vector< vector<Node*> > YensKShortestPathAlg(int srcNodePos, int destNodePos,
+    vector<Flexi_WeightedTopology::Path*> YensKShortestPathAlg(int srcNodePos, int destNodePos,
             int maxRoutesPerNode, int srcAddr, int destAddr);
 
     virtual void extractFromNetwork(bool (*selfunc)(cModule *,void *), void *userdata=nullptr);

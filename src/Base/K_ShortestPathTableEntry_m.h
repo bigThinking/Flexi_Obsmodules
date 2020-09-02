@@ -42,6 +42,7 @@
  *     int destAddress;
  *     double cost;
  *     double path[];
+ *     string pathNodes[];
  * }
  * </pre>
  */
@@ -54,6 +55,8 @@ class K_ShortestPathTableEntry : public ::omnetpp::cObject
     double cost;
     double *path; // array ptr
     unsigned int path_arraysize;
+    ::omnetpp::opp_string *pathNodes; // array ptr
+    unsigned int pathNodes_arraysize;
 
   private:
     void copy(const K_ShortestPathTableEntry& other);
@@ -84,6 +87,10 @@ class K_ShortestPathTableEntry : public ::omnetpp::cObject
     virtual unsigned int getPathArraySize() const;
     virtual double getPath(unsigned int k) const;
     virtual void setPath(unsigned int k, double path);
+    virtual void setPathNodesArraySize(unsigned int size);
+    virtual unsigned int getPathNodesArraySize() const;
+    virtual const char * getPathNodes(unsigned int k) const;
+    virtual void setPathNodes(unsigned int k, const char * pathNodes);
 };
 
 inline void doParsimPacking(omnetpp::cCommBuffer *b, const K_ShortestPathTableEntry& obj) {obj.parsimPack(b);}

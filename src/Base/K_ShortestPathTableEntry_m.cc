@@ -186,18 +186,23 @@ K_ShortestPathTableEntry::K_ShortestPathTableEntry() : ::omnetpp::cObject()
     this->cost = 0;
     path_arraysize = 0;
     this->path = 0;
+    pathNodes_arraysize = 0;
+    this->pathNodes = 0;
 }
 
 K_ShortestPathTableEntry::K_ShortestPathTableEntry(const K_ShortestPathTableEntry& other) : ::omnetpp::cObject(other)
 {
     path_arraysize = 0;
     this->path = 0;
+    pathNodes_arraysize = 0;
+    this->pathNodes = 0;
     copy(other);
 }
 
 K_ShortestPathTableEntry::~K_ShortestPathTableEntry()
 {
     delete [] this->path;
+    delete [] this->pathNodes;
 }
 
 K_ShortestPathTableEntry& K_ShortestPathTableEntry::operator=(const K_ShortestPathTableEntry& other)
@@ -219,6 +224,11 @@ void K_ShortestPathTableEntry::copy(const K_ShortestPathTableEntry& other)
     path_arraysize = other.path_arraysize;
     for (unsigned int i=0; i<path_arraysize; i++)
         this->path[i] = other.path[i];
+    delete [] this->pathNodes;
+    this->pathNodes = (other.pathNodes_arraysize==0) ? nullptr : new ::omnetpp::opp_string[other.pathNodes_arraysize];
+    pathNodes_arraysize = other.pathNodes_arraysize;
+    for (unsigned int i=0; i<pathNodes_arraysize; i++)
+        this->pathNodes[i] = other.pathNodes[i];
 }
 
 void K_ShortestPathTableEntry::parsimPack(omnetpp::cCommBuffer *b) const
@@ -229,6 +239,8 @@ void K_ShortestPathTableEntry::parsimPack(omnetpp::cCommBuffer *b) const
     doParsimPacking(b,this->cost);
     b->pack(path_arraysize);
     doParsimArrayPacking(b,this->path,path_arraysize);
+    b->pack(pathNodes_arraysize);
+    doParsimArrayPacking(b,this->pathNodes,pathNodes_arraysize);
 }
 
 void K_ShortestPathTableEntry::parsimUnpack(omnetpp::cCommBuffer *b)
@@ -244,6 +256,14 @@ void K_ShortestPathTableEntry::parsimUnpack(omnetpp::cCommBuffer *b)
     } else {
         this->path = new double[path_arraysize];
         doParsimArrayUnpacking(b,this->path,path_arraysize);
+    }
+    delete [] this->pathNodes;
+    b->unpack(pathNodes_arraysize);
+    if (pathNodes_arraysize==0) {
+        this->pathNodes = 0;
+    } else {
+        this->pathNodes = new ::omnetpp::opp_string[pathNodes_arraysize];
+        doParsimArrayUnpacking(b,this->pathNodes,pathNodes_arraysize);
     }
 }
 
@@ -317,6 +337,36 @@ void K_ShortestPathTableEntry::setPath(unsigned int k, double path)
     this->path[k] = path;
 }
 
+void K_ShortestPathTableEntry::setPathNodesArraySize(unsigned int size)
+{
+    ::omnetpp::opp_string *pathNodes2 = (size==0) ? nullptr : new ::omnetpp::opp_string[size];
+    unsigned int sz = pathNodes_arraysize < size ? pathNodes_arraysize : size;
+    for (unsigned int i=0; i<sz; i++)
+        pathNodes2[i] = this->pathNodes[i];
+    for (unsigned int i=sz; i<size; i++)
+        pathNodes2[i] = 0;
+    pathNodes_arraysize = size;
+    delete [] this->pathNodes;
+    this->pathNodes = pathNodes2;
+}
+
+unsigned int K_ShortestPathTableEntry::getPathNodesArraySize() const
+{
+    return pathNodes_arraysize;
+}
+
+const char * K_ShortestPathTableEntry::getPathNodes(unsigned int k) const
+{
+    if (k>=pathNodes_arraysize) throw omnetpp::cRuntimeError("Array of size %d indexed by %d", pathNodes_arraysize, k);
+    return this->pathNodes[k].c_str();
+}
+
+void K_ShortestPathTableEntry::setPathNodes(unsigned int k, const char * pathNodes)
+{
+    if (k>=pathNodes_arraysize) throw omnetpp::cRuntimeError("Array of size %d indexed by %d", pathNodes_arraysize, k);
+    this->pathNodes[k] = pathNodes;
+}
+
 class K_ShortestPathTableEntryDescriptor : public omnetpp::cClassDescriptor
 {
   private:
@@ -382,7 +432,7 @@ const char *K_ShortestPathTableEntryDescriptor::getProperty(const char *property
 int K_ShortestPathTableEntryDescriptor::getFieldCount() const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
-    return basedesc ? 5+basedesc->getFieldCount() : 5;
+    return basedesc ? 6+basedesc->getFieldCount() : 6;
 }
 
 unsigned int K_ShortestPathTableEntryDescriptor::getFieldTypeFlags(int field) const
@@ -399,8 +449,9 @@ unsigned int K_ShortestPathTableEntryDescriptor::getFieldTypeFlags(int field) co
         FD_ISEDITABLE,
         FD_ISEDITABLE,
         FD_ISARRAY | FD_ISEDITABLE,
+        FD_ISARRAY | FD_ISEDITABLE,
     };
-    return (field>=0 && field<5) ? fieldTypeFlags[field] : 0;
+    return (field>=0 && field<6) ? fieldTypeFlags[field] : 0;
 }
 
 const char *K_ShortestPathTableEntryDescriptor::getFieldName(int field) const
@@ -417,8 +468,9 @@ const char *K_ShortestPathTableEntryDescriptor::getFieldName(int field) const
         "destAddress",
         "cost",
         "path",
+        "pathNodes",
     };
-    return (field>=0 && field<5) ? fieldNames[field] : nullptr;
+    return (field>=0 && field<6) ? fieldNames[field] : nullptr;
 }
 
 int K_ShortestPathTableEntryDescriptor::findField(const char *fieldName) const
@@ -430,6 +482,7 @@ int K_ShortestPathTableEntryDescriptor::findField(const char *fieldName) const
     if (fieldName[0]=='d' && strcmp(fieldName, "destAddress")==0) return base+2;
     if (fieldName[0]=='c' && strcmp(fieldName, "cost")==0) return base+3;
     if (fieldName[0]=='p' && strcmp(fieldName, "path")==0) return base+4;
+    if (fieldName[0]=='p' && strcmp(fieldName, "pathNodes")==0) return base+5;
     return basedesc ? basedesc->findField(fieldName) : -1;
 }
 
@@ -447,8 +500,9 @@ const char *K_ShortestPathTableEntryDescriptor::getFieldTypeString(int field) co
         "int",
         "double",
         "double",
+        "string",
     };
-    return (field>=0 && field<5) ? fieldTypeStrings[field] : nullptr;
+    return (field>=0 && field<6) ? fieldTypeStrings[field] : nullptr;
 }
 
 const char **K_ShortestPathTableEntryDescriptor::getFieldPropertyNames(int field) const
@@ -488,6 +542,7 @@ int K_ShortestPathTableEntryDescriptor::getFieldArraySize(void *object, int fiel
     K_ShortestPathTableEntry *pp = (K_ShortestPathTableEntry *)object; (void)pp;
     switch (field) {
         case 4: return pp->getPathArraySize();
+        case 5: return pp->getPathNodesArraySize();
         default: return 0;
     }
 }
@@ -521,6 +576,7 @@ std::string K_ShortestPathTableEntryDescriptor::getFieldValueAsString(void *obje
         case 2: return long2string(pp->getDestAddress());
         case 3: return double2string(pp->getCost());
         case 4: return double2string(pp->getPath(i));
+        case 5: return oppstring2string(pp->getPathNodes(i));
         default: return "";
     }
 }
@@ -540,6 +596,7 @@ bool K_ShortestPathTableEntryDescriptor::setFieldValueAsString(void *object, int
         case 2: pp->setDestAddress(string2long(value)); return true;
         case 3: pp->setCost(string2double(value)); return true;
         case 4: pp->setPath(i,string2double(value)); return true;
+        case 5: pp->setPathNodes(i,(value)); return true;
         default: return false;
     }
 }

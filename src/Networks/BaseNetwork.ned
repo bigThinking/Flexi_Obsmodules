@@ -18,10 +18,11 @@ package flexi_obsmodules.src.Networks;
 network BaseNetwork
 {
     parameters:
-        @statistic[BurstLost](source=lostBurst; record=last,vector,vector(count));//1-failed reservation oxc, 2-failed reservation mux, 3- impairments, 4 - arrived at wrong destination
-        @statistic[BCPLost](source=lostBCP; record=vector);//1-bcp lost due to contention, 2-bcp dropped by queue, 3-bcp lost impairments, 4-offset finished
-        @statistic[BurstSent](source=count(sentBurst); record=last,vector);
-        @statistic[BurstSuccess](source=count(successfulBurst); record=last,vector);
-        @statistic[BurstLossRatio](source=count(lostBurst)/count(sentBurst); record=last,vector);
+        @statistic[BurstLost](source=lostBurst; record= count, vector, vector(count));//1-failed reservation oxc, 2-failed reservation mux, 3- impairments, 4 - arrived at wrong destination
+        @statistic[BCPLost](source=lostBCP; record=count, vector);//1-bcp lost due to contention, 2-bcp dropped by queue, 3-bcp lost impairments, 4-offset finished, 5 - arrived at wrong destination
+        @statistic[BurstSent](source=sentBurst; record=count, vector);
+        @statistic[BurstSuccess](source=successfulBurst; record=count, vector);
+        @statistic[BurstLossRatio](source=count(lostBurst)/count(sentBurst); record=last,vector, timeWinAvg);
         @statistic[EndToEndAcksFromMux](source=nackSentMuxAT; record=count);
+        @statistic[routingInfo](source=routingInfo; record=vector);
 }
