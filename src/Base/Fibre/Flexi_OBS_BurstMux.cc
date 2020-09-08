@@ -519,9 +519,9 @@ int Flexi_OBS_BurstMux::createLightPath(double spectrumCenter, double spectrumLo
 
     cChannelType *channelFactory;
     if(!createTransmitter)
-        channelFactory = cChannelType::get("obsmodules.src.Base.Fibre.SpectrumChannelDelay");
+        channelFactory = cChannelType::get("flexi_obsmodules.src.Base.Fibre.SpectrumChannelDelay");
     else
-        channelFactory = cChannelType::get("obsmodules.src.Base.Fibre.SpectrumChannelTransmitter");
+        channelFactory = cChannelType::get("flexi_obsmodules.src.Base.Fibre.SpectrumChannelTransmitter");
 
     cChannel *inChannel = channelFactory->create("inChannel");
     cChannel *outChannel = channelFactory->create("outChannel");

@@ -155,9 +155,9 @@ void K_ShortestPathTable::finish()
                 }
 
                 (*file)<< "||" << temp->getId() << "-->";
-                for(int k=0; k < temp->getPathArraySize(); k++)//print path for each route
+                for(int k=0; k < temp->getPathNodesArraySize(); k++)//print path for each route
                 {
-                    (*file)<< std::setprecision(16) <<  temp->getPath(k) << ">>";
+                    (*file)<< temp->getPathNodes(k) << ">>";
                 }
                 (*file)<< "\n---------------------------------------------------------------\n";
             }

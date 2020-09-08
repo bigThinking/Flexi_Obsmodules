@@ -27,6 +27,10 @@ void Flexi_OBS_JIT_Mux::initialize()
     bcpTraversalAckEnabled = par("bcpTraversalAckEnabled");
     bcpTraversalAckMultiplier = par("bcpTraversalAckTimerMultiplier");
 
+    fragmentationUE.setName("UE");
+    fragmentationSHF.setName("SHF");
+    fragmentationEF.setName("EF");
+
     WATCH_VECTOR(wavelengthInUseArray);
 
 }

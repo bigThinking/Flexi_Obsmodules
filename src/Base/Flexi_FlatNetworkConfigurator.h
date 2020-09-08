@@ -55,7 +55,6 @@ protected:
     virtual int numInitStages() const  {return 3;}
     virtual void initialize(int stage);
     virtual void handleMessage(cMessage *msg);
-    virtual void printGateNodes(Flexi_WeightedTopology& topo);
 
     virtual void extractTopology(cTopology& topo, NodeInfoVector& nodeInfo);
     virtual void assignAddresses(cTopology& topo, NodeInfoVector& nodeInfo);

@@ -1,5 +1,5 @@
 //
-// Generated file, do not edit! Created by nedtool 5.4 from src/Base/K_ShortestPathTableEntry.msg.
+// Generated file, do not edit! Created by nedtool 5.6 from src/Base/K_ShortestPathTableEntry.msg.
 //
 
 // Disable warnings about unused variables, empty switch stmts, etc:

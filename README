@@ -9,7 +9,7 @@ Future work will consist of
 -implementing signalling protocols such as JET
 -Improving Integration with INET framework
 
-This project requires at least Omnetpp 5.1 and INET 3.5 (20-09-2017)
+This project requires at least Omnetpp 5.6.2 and INET 4.2.0 (03-09-2020)
 
 
 

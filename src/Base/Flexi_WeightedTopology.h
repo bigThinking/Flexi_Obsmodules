@@ -86,7 +86,7 @@ private:
                 orderedNodes = path;
                 Cost = cost;
 
-                pathGates.resize(2*orderedNodes.size());
+                pathGates.resize(2*(orderedNodes.size()-1));
                 int pathPos = 0;
 
                 for(int j =0; j < orderedNodes.size()-1; j++)//for each node in pathNodes
@@ -96,8 +96,8 @@ private:
                     {
                        if(node->getLinkOut(k)->getRemoteNode() == orderedNodes[j+1])
                          {
-                           pathGates[++pathPos] = node->getLinkOut(k)->getLocalGateId();
-                           pathGates[++pathPos] = node->getLinkOut(k)->getRemoteGateId();
+                           pathGates[pathPos++] = node->getLinkOut(k)->getLocalGateId();
+                           pathGates[pathPos++] = node->getLinkOut(k)->getRemoteGateId();
                          }
                     }
                  }
@@ -127,7 +127,6 @@ private:
             int maxRoutesPerNode, int srcAddr, int destAddr);
 
     virtual void extractFromNetwork(bool (*selfunc)(cModule *,void *), void *userdata=nullptr);
-    virtual string printGateNodes();
 
     protected:
     virtual WNode *createNode(cModule *module) { return new WNode(module->getId()); }

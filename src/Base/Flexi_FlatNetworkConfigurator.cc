@@ -34,8 +34,6 @@ void Flexi_FlatNetworkConfigurator::initialize(int stage)
         // update display string
         setDisplayString(topo, nodeInfo);
 
-        printGateNodes(topo);
-
         printElapsedTime("", startTime);
     }
 }
@@ -317,14 +315,6 @@ void Flexi_FlatNetworkConfigurator::fillShortestPathRoutingTables(cTopology& _to
     }
 }
 
-void Flexi_FlatNetworkConfigurator::printGateNodes(Flexi_WeightedTopology& topo)
-{
-    file = new std::ofstream();
-    file->open("GateNodes");
-    (*file)<< topo.printGateNodes();
-    file->close();
-}
-
 void Flexi_FlatNetworkConfigurator::handleMessage(cMessage *msg)
 {
     error("this module doesn't handle messages, it runs only in initialize()");
@@ -390,7 +380,7 @@ void Flexi_FlatNetworkConfigurator::fillRoutingTables(cTopology& _topo, NodeInfo
             IInterfaceTable *ift = nodeInfo[j].ift;
 
             int outputGateId = atNode->getPath(0)->getLocalGate()->getId();
-            InterfaceEntry *ie = ift->getInterfaceByNodeOutputGateId(outputGateId);
+            InterfaceEntry *ie = ift->findInterfaceByNodeOutputGateId(outputGateId);
             if (!ie)
                 error("%s has no interface for output gate id %d", ift->getFullPath().c_str(), outputGateId);
 
