@@ -692,7 +692,7 @@ bool Flexi_OBS_BurstMux::sendBurst(OBS_Burst* burst)
 
                 entry->setEndTime(simTime()+ transmissionDuration + propagationDelay);
                 burst->setTransmissionEntry(entry);
-                sendDirect(entry, table, "entryIn");
+                table->insertTransmissionEntry(entry);
             }
 
             burst->setHasBeenTransmitted(true);
@@ -772,7 +772,7 @@ bool Flexi_OBS_BurstMux::sendCtlMsg()
         entry->setStartTime(simTime());
         entry->setEndTime(simTime() +controlChannelOut->calculateDuration(msg) + controlChannelOut->getDelay());
         msg->setTransmissionEntry(entry);
-        sendDirect(entry, table, "entryIn");
+        table->insertTransmissionEntry(entry);
     }
 
     send(msg, controlChannelOutGate);

@@ -141,7 +141,7 @@ bool Flexi_OBS_JIT_Mux::doReservationAndSignalling(Flexi_OBS_BurstControlPacket*
             entry->setStartTime(simTime());
             entry->setEndTime(simTime() +controlChannelOut->calculateDuration(bcp) + controlChannelOut->getDelay());
             bcp->setTransmissionEntry(entry);
-            sendDirect(entry, table, "entryIn");
+            table->insertTransmissionEntry(entry);
         }
 
         if(bcpTraversalAckEnabled)

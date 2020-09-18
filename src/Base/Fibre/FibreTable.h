@@ -25,11 +25,12 @@ using namespace std;
 /**
  * TODO - Generated class
  */
-class FibreTable : public cSimpleModule, public cListener
+class FibreTable : public cSimpleModule
 {
 public:
     set<TransmissionEntry*>* getEntriesBetweenTimes(Mux sender, simtime_t startTime, simtime_t endTime);
     const vector<TransmissionEntry*> getEntriesWithStartTime(Mux sender, simtime_t startTime);
+    void insertTransmissionEntry(TransmissionEntry* entry);
 protected:
     simtime_t cleanUpInterval;
     int maxContainerSize;

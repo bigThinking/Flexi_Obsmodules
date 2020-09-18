@@ -41,8 +41,13 @@ void FibreTable::handleMessage(cMessage *msg)
         scheduleAt(simTime()+cleanUpInterval, cleanUpTimer);
         return;
     }
+}
 
-    TransmissionEntry* entry = check_and_cast<TransmissionEntry*>(msg);
+void FibreTable::insertTransmissionEntry(TransmissionEntry* entry)
+{
+    #if DEBUG
+    Enter_Method_Silent("FibreTable::insertTransmissionEntry()");
+    #endif
     transmissions.add(entry);
     simtime_t duration = entry->getEndTime() - entry->getStartTime();
 
@@ -66,6 +71,9 @@ void FibreTable::handleMessage(cMessage *msg)
 
 const vector<TransmissionEntry*> FibreTable::getEntriesWithStartTime(Mux sender, simtime_t startTime)
 {
+    #if DEBUG
+    Enter_Method_Silent("FibreTable::getEntriesWithStartTime()");
+    #endif
     if(sender == Mux::Left)
         return leftStartTimeIndex[startTime];
     else return leftStartTimeIndex[startTime];
@@ -74,6 +82,9 @@ const vector<TransmissionEntry*> FibreTable::getEntriesWithStartTime(Mux sender,
 
 set<TransmissionEntry*>* FibreTable::getEntriesBetweenTimes(Mux sender, simtime_t startTime, simtime_t endTime)
 {
+   #if DEBUG
+   Enter_Method_Silent("FibreTable::getEntriesBetweenTimes()");
+   #endif
     set<TransmissionEntry*> *temp = new set<TransmissionEntry*>();
 
     map<simtime_t,vector<TransmissionEntry*>>::iterator itlowStart,itupStart, itlowEnd, itupEnd;
@@ -112,6 +123,9 @@ set<TransmissionEntry*>* FibreTable::getEntriesBetweenTimes(Mux sender, simtime_
 
 void FibreTable::cleanUp()
 {
+    #if DEBUG
+    Enter_Method_Silent("FibreTable::cleanUp()");
+    #endif
     map<simtime_t,vector<TransmissionEntry*>>::iterator itl = leftEndTimeIndex.begin();
     map<simtime_t,vector<TransmissionEntry*>>::iterator itr = rightEndTimeIndex.begin();
     map<simtime_t,vector<TransmissionEntry*>>::iterator temp;
@@ -145,22 +159,22 @@ void FibreTable::cleanUp()
 
 
     while(itr != rightEndTimeIndex.end()){
-           if(itr->first < timePast)
-           {
-               vector<TransmissionEntry*> vec = (*itr).second;
-               int size = vec.size();
-               for(int i = 0; i < size; i++){
-                   startTimes.insert(vec[i]->getStartTime());
-                   cObject *obj =  transmissions.remove(vec[i]);
-                   delete(obj);
-               }
+        if(itr->first < timePast)
+        {
+            vector<TransmissionEntry*> vec = (*itr).second;
+            int size = vec.size();
+            for(int i = 0; i < size; i++){
+                startTimes.insert(vec[i]->getStartTime());
+                cObject *obj =  transmissions.remove(vec[i]);
+                delete(obj);
+            }
 
-               temp = itr;
-               ++itr;
+            temp = itr;
+            ++itr;
 
-               rightEndTimeIndex.erase(temp);
-           }else break;
-       }
+            rightEndTimeIndex.erase(temp);
+        }else break;
+    }
 
     for(set<simtime_t>::iterator its = startTimes.begin(); its != startTimes.end(); its++)
     {
