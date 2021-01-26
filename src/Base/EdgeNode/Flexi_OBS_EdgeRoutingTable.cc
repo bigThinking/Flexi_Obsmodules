@@ -93,3 +93,9 @@ K_ShortestPathTable* Flexi_OBS_EdgeRoutingTable::getShortestPathTable()
 {
     return check_and_cast<K_ShortestPathTable *>(this->getParentModule()->getParentModule()->getSubmodule("k_ShortestPathTable"));
 }
+
+void Flexi_OBS_EdgeRoutingTable::clearTable()
+{
+    tableEntries.clear();
+    entryIdIndex.clear();
+}

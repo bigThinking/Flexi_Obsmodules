@@ -39,6 +39,7 @@ class Flexi_OBS_EdgeRoutingTable : public cSimpleModule, public cListener
     void receiveSignal(cComponent *source, simsignal_t signalID, cObject *obj, cObject *details);
     virtual NodeRoutingTableEntry* getEntry(int entryId);
     virtual void doRecordTableEntries(char* info){};
+    virtual void clearTable();
   protected:
     int entryCounter = 0;
     bool inSuperNode, recordTableEntries;

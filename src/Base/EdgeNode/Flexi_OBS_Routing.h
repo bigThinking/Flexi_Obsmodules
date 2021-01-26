@@ -73,7 +73,6 @@ protected:
     simtime_t calculateMinimumOffset(K_ShortestPathTableEntry* path);
     virtual double getDatarate();
     void finish();
-
 };
 
 #endif
