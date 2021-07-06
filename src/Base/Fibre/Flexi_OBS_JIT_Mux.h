@@ -33,7 +33,7 @@ public:
     double determinePercentageFreeWavelengths() override;
 protected:
     simsignal_t nackSentId;
-    cOutVector fragmentationUE, fragmentationSHF, fragmentationEF;
+    cOutVector fragmentationUE, fragmentationSHF, fragmentationEF; //EF-External Fragmentation, SHF-Shannon Fragmentation, UE-Utilisation Entropy
     vector<bool> wavelengthInUseArray;
     vector<AckTimer*> ackTimers;
     double bcpTraversalAckMultiplier;

@@ -22,12 +22,21 @@ void Flexi_OBS_EdgeRoutingTable::initialize()
     take(&(this->tableEntries));
     inSuperNode = par("inSuperNode");
     recordTableEntries = par("recordTableEntries");
+    recordFinalTableEntries = par("recordFinalTableEntries");
     shortestPathTable = getShortestPathTable();
 
     if(recordTableEntries){
         file = new std::ofstream();
         file->open(getFullPath());
     }
+
+    if(recordFinalTableEntries){
+            fileFinal = new std::ofstream();
+            const char* config = getEnvir()->getConfigEx()->getActiveConfigName();
+            string runNumber = to_string(getEnvir()->getConfigEx()->getActiveRunNumber());
+            const char* simTmeLimit = getEnvir()->getConfig()->getConfigValue("sim-time-limit");
+            fileFinal->open(getFullPath().append(config).append(runNumber).append(simTmeLimit) + ".final");
+        }
 }
 
 bool Flexi_OBS_EdgeRoutingTable::addEntry(NodeRoutingTableEntry *entry)
@@ -87,6 +96,11 @@ void Flexi_OBS_EdgeRoutingTable::finish()
         if(file->is_open())
             file->close();
     }
+
+    if(recordFinalTableEntries){
+        if(fileFinal->is_open())
+           fileFinal->close();
+        }
 }
 
 K_ShortestPathTable* Flexi_OBS_EdgeRoutingTable::getShortestPathTable()

@@ -42,8 +42,9 @@ class Flexi_OBS_EdgeRoutingTable : public cSimpleModule, public cListener
     virtual void clearTable();
   protected:
     int entryCounter = 0;
-    bool inSuperNode, recordTableEntries;
+    bool inSuperNode, recordTableEntries, recordFinalTableEntries;
     std::ofstream* file;
+    std::ofstream* fileFinal;
     cArray tableEntries;
     K_ShortestPathTable* shortestPathTable;
     map<int, NodeRoutingTableEntry*> entryIdIndex;

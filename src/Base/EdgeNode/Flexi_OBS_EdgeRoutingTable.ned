@@ -24,6 +24,7 @@ simple Flexi_OBS_EdgeRoutingTable like IEdgeRoutingTable
         @display("i=block/table2");
         bool inSuperNode;        
         bool recordTableEntries = default(false);
+        bool recordFinalTableEntries = default(false);
     gates:
         input ackIn @directIn;
 }

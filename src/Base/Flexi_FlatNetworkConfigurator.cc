@@ -232,7 +232,7 @@ void Flexi_FlatNetworkConfigurator::fillShortestPathRoutingTables(cTopology& _to
 
                 counter = 0;
                 for(int k = 0; k < path->orderedNodes.size(); k++)
-                    entry->setPathNodes(counter++, path->orderedNodes[k]->getModule()->getFullName());
+                    entry->setPathNodes(counter++, path->orderedNodes[k]->getModule()->getFullPath().c_str());
 
                 table->addEntry(entry);
 
@@ -252,7 +252,7 @@ void Flexi_FlatNetworkConfigurator::fillShortestPathRoutingTables(cTopology& _to
 
                 counter = 0;
                 for(int k = path->orderedNodes.size()-1; k >= 0; k--)
-                   entry->setPathNodes(counter++,  path->orderedNodes[k]->getModule()->getFullName());
+                   entry->setPathNodes(counter++,  path->orderedNodes[k]->getModule()->getFullPath().c_str());
 
                 table->addEntry(entry);
             }
@@ -306,7 +306,7 @@ void Flexi_FlatNetworkConfigurator::fillShortestPathRoutingTables(cTopology& _to
 
                     counter = 0;
                     for(int l = A[k]->orderedNodes.size()-1; l >= 0; l--)
-                        entry->setPathNodes(counter++,  A[k]->orderedNodes[l]->getModule()->getFullName());
+                        entry->setPathNodes(counter++,  A[k]->orderedNodes[l]->getModule()->getFullPath().c_str());
 
                     table->addEntry(entry);
                 }

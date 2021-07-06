@@ -825,9 +825,10 @@ void Flexi_OBS_JIT_Mux::doCollectMeasures()
    vector<int> ranges;
    int x = 0;
    bool onFreeRange = false;
+   unsigned int size = wavelengthInUseArray.size();
 
-   for(int i = 0; i < wavelengthInUseArray.size(); i++){
-       if(i > 0 && i < wavelengthInUseArray.size()-1)
+   for(unsigned int i = 0; i < size; i++){
+       if(i > 0 && i < size-1)
          x = x + (wavelengthInUseArray[i]^wavelengthInUseArray[i-1]);
 
        if(!wavelengthInUseArray[i] && !onFreeRange)
@@ -841,24 +842,26 @@ void Flexi_OBS_JIT_Mux::doCollectMeasures()
        }
     }
 
-   double ue = ((double)x)/(wavelengthInUseArray.size()-1);
+   if(onFreeRange)
+       ranges.push_back(size-1);
+
+   double ue = ((double)x)/(size-1);
    fragmentationUE.record(ue);
    int maxFreeBlockSize = 0;
    double shf = 0, sum = 0;
-   int size = wavelengthInUseArray.size();
    int rangesSize = (int)(ranges.size()-1);
    for(int i = 0; i < rangesSize; i++){
        if((i+1)%2 == 0)
            continue;
 
        x = ranges[i+1] - ranges[i] + 1;
-       shf = shf + ((x/size)*log(size/x));
+       shf = shf + ((((double)x)/size)*log(((double)size)/x));
        sum = sum + x;
        if(x > maxFreeBlockSize)
            maxFreeBlockSize = x;
    }
 
-   double ef = 1-(maxFreeBlockSize/sum);
+   double ef = (1-(((double)maxFreeBlockSize)/sum));
    fragmentationSHF.record(shf);
    fragmentationEF.record(ef);
 }

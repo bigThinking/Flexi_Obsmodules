@@ -137,8 +137,12 @@ int K_ShortestPathTable::comparator(cObject *obj1, cObject *obj2)
 void K_ShortestPathTable::finish()
 {
     if(recordTableEntries){
+        const char* config = getEnvir()->getConfigEx()->getActiveConfigName();
+        string runNumber = to_string(getEnvir()->getConfigEx()->getActiveRunNumber());
         file = new std::ofstream();
-        file->open(getFullPath());
+        file->open(getFullPath().append(config).append(runNumber).append(simTime().str()) + ".final");
+
+        (*file)<< "{\"" << getFullPath() << "\": [";
 
         for(int i=0; i < table.size(); i++)//go through table
         {
@@ -149,21 +153,33 @@ void K_ShortestPathTable::finish()
                 K_ShortestPathTableEntry *temp = check_and_cast<K_ShortestPathTableEntry*>(q->get(j));
                 if(j==0)
                 {
-                    (*file)<< "==============================================================\n";
-                    (*file)<< temp->getDestAddress() << "\n";
-                    (*file)<< "==============================================================\n";
+                    (*file)<< "{\n";
+                    (*file)<< "\"srcAddress\":\"" << temp->getSrcAddress() << "\",\n";
+                    (*file)<< "\"destAddress\":\"" << temp->getDestAddress() << "\",\n";
+                    (*file)<< "\"paths\":[\n";
                 }
 
-                (*file)<< "||" << temp->getId() << "-->";
+                (*file)<< "{\n";
+                (*file)<< "\"id\": \""<< temp->getId() << "\",\n";
+                (*file)<< "\"length\": "<< temp->getCost() << ",\n";
+                (*file)<< "\"path\": \"";
                 for(int k=0; k < temp->getPathNodesArraySize(); k++)//print path for each route
                 {
                     (*file)<< temp->getPathNodes(k) << ">>";
                 }
-                (*file)<< "\n---------------------------------------------------------------\n";
+                (*file)<< "\"\n}";
+
+                if(j < q->getLength()-1)
+                (*file)<< ",";
+
+                (*file)<< "\n";
             }
-
+            (*file)<< "\n]}";
+            if(i < table.size()-1)
+               (*file)<< ",";
+            (*file)<< "\n";
         }
-
+        (*file)<< "]}";
         file->close();
     }
 }

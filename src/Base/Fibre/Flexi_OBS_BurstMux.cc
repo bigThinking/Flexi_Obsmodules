@@ -84,7 +84,7 @@ void Flexi_OBS_BurstMux::initialize(){
     controlChannelIn->setDelay(propagationDelay.dbl());
     table = check_and_cast<FibreTable*>(getParentModule()->getSubmodule("fibreTable"));
 
-    if(par("collectMeasures"))
+    if(par("collectMeasures") && position == Mux::Left)
     {
         collectMeasures = new cMessage("collectMeasures");
         scheduleAt(simTime() + 3, collectMeasures);
@@ -192,7 +192,7 @@ void Flexi_OBS_BurstMux::handleMessage(cMessage *msg){
         else if(strcmp(msg->getName(), "collectMeasures") == 0)
         {
             doCollectMeasures();
-            scheduleAt(simTime()+1, collectMeasures);
+            scheduleAt(simTime()+0.2, collectMeasures);
         }
         else doSelfMessageProcessing(msg);
     }else{
